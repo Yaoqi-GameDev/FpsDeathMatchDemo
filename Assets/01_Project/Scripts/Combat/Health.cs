@@ -1,0 +1,73 @@
+using System;
+using UnityEngine;
+
+namespace FpsDemo.Combat
+{
+    /// <summary>
+    /// 生命值：挂在带 <see cref="Collider"/> 的物体上；射线命中后由 <see cref="FpsHitscanWeapon"/> 调用
+    /// <see cref="IDamageable"/>。致死时发布 <see cref="Died"/> 与 <see cref="CombatKillBus"/>。
+    /// </summary>
+    public sealed class Health : MonoBehaviour, IDamageable
+    {
+        [SerializeField] private float _maxHealth = 100f;
+        [SerializeField] private bool _destroyGameObjectWhenDead = true;
+
+        /// <summary>本物体死亡时触发（先于 <see cref="Destroy"/>）；订阅者勿阻塞主线程。</summary>
+        public event Action<KillReport> Died;
+
+        public float Current { get; private set; }
+        public float Max => _maxHealth;
+        public bool IsDead { get; private set; }
+
+        private void Awake()
+        {
+            Current = _maxHealth;
+        }
+
+        public void ApplyDamage(float amount)
+        {
+            ApplyDamage(amount, null);
+        }
+
+        public void ApplyDamage(float amount, GameObject instigator)
+        {
+            if (IsDead || amount <= 0f)
+                return;
+
+            Current -= amount;
+            if (Current > 0f)
+                return;
+
+            Current = 0f;
+            IsDead = true;
+
+            var report = new KillReport(gameObject, instigator);
+            CombatKillBus.Publish(report);
+            Died?.Invoke(report);
+
+            if (_destroyGameObjectWhenDead)
+                Destroy(gameObject);
+        }
+
+        /// <summary>复活为满血（用于测试假人重生等，不销毁玩家的流程）。</summary>
+        public void ReviveFull()
+        {
+            Current = _maxHealth;
+            IsDead = false;
+        }
+
+        /// <summary>玩家/假人复活前调用：避免死亡时销毁物体。</summary>
+        public void SetDestroyOnDeath(bool destroy)
+        {
+            _destroyGameObjectWhenDead = destroy;
+        }
+
+        /// <summary>编辑器或调试：重置为满血。</summary>
+        [ContextMenu("Combat/Reset Health")]
+        private void ContextResetHealth()
+        {
+            Current = _maxHealth;
+            IsDead = false;
+        }
+    }
+}
