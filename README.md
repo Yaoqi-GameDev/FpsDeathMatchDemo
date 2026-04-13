@@ -166,6 +166,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-04-08 | **`PlayerHitscanVfxFeedback`** / **`AiHitscanVfxFeedback`**：分别订阅玩家/人机武器射击事件；Infima `P_LPSP_WEP_Flash`、`P_IMP_Concrete`；移除合并版 `HitscanVfxFeedback` |
 | 2026-04-08 | 结算时解锁光标；`FpsPlayerLook` 在对局已结束时不左键重锁光标、不转视角，避免 Again 等 UI 点击被 FPS 光标逻辑吞掉 |
 | 2026-04-08 | 初版：移动方案、输入路线、Ctrl/梯子/滑铲/连跳/分阶段与 README 维护约定 |
 | 2026-04-08 | 蹲为按住；Lobby 仅预留网络/大厅，玩法与原型均在 DeathMatch |
