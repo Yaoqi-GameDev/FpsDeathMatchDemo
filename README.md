@@ -107,7 +107,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 - **伤害**：`IDamageable` + **`Health`**（可受伤物体挂 Collider + `Health`，默认死亡 **`Destroy`**）。
 - **弹药 HUD**：`AmmoHub` 读武器公开属性写入 **TextMeshPro**；**`--UI--` → GamePlayCanvas → Canvas** 下与 **Crosshair** 并列；**Canvas Scaler** 建议 **Scale With Screen Size**；弹药 **RectTransform** 锚 **右下角** 以适配分辨率。
 - **准星命中**：`FpsCrosshairHitFeedback` 订阅 **`ShotHitDamageable`**（仅命中可受伤目标为 `true`）。
-- **音效**：**`FpsHitscanWeapon`** 发 C# 事件 **`ShotFired`** / **`ReloadStarted`**（无音频引用）；**`FpsWeaponAudioObserver`** 订阅并拖 **`AudioClip`**，经单例 **`AudioManager.PlayOneShot2D`** 播放。
+- **音效**：**`FpsHitscanWeapon`** 发 C# 事件 **`ShotFired`** / **`ReloadStarted`**（无音频引用）；**`FpsWeaponAudioObserver`** 订阅并拖 **`AudioClip`**，经单例 **`AudioManager.PlayOneShot2D`** 播放。**命中（人/墙）**：**`FpsHitscanSurfaceAudioFeedback`** 订阅 **`ShotResolved`**，拖 **`_hitDamageableClip`** / **`_hitWorldClip`**（仅 Player；人机未挂）。
 
 ### 近期计划（未实现）
 
@@ -166,7 +166,9 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
-| 2026-04-08 | **`PlayerHitscanVfxFeedback`** / **`AiHitscanVfxFeedback`**：分别订阅玩家/人机武器射击事件；Infima `P_LPSP_WEP_Flash`、`P_IMP_Concrete`；移除合并版 `HitscanVfxFeedback` |
+| 2026-04-08 | **`FpsHitscanSurfaceAudioFeedback`**（仅 Player）：`ShotResolved` + `HasWorldHit`；`HitDamageable` → `S_WEP_Impact_Bullet_02`，否则 `S_WEP_Impact_Bullet_01` |
+| 2026-04-08 | **`HitscanImpactVfxFeedback`**：订阅 `ShotResolved`；`HitDamageable` 用 `VFX_Blood_01`，否则 `VFX_Classic_03`（WALLCOEUR 包）；挂 **Player** 与 **Bot1** |
+| 2026-04-08 | 回退：移除 **`PlayerHitscanVfxFeedback`** / **`AiHitscanVfxFeedback`**（射击命中/枪口特效脚本与场景挂载），武器逻辑仍为 `FpsHitscanWeapon` / `FpsAiHitscanWeapon` |
 | 2026-04-08 | 结算时解锁光标；`FpsPlayerLook` 在对局已结束时不左键重锁光标、不转视角，避免 Again 等 UI 点击被 FPS 光标逻辑吞掉 |
 | 2026-04-08 | 初版：移动方案、输入路线、Ctrl/梯子/滑铲/连跳/分阶段与 README 维护约定 |
 | 2026-04-08 | 蹲为按住；Lobby 仅预留网络/大厅，玩法与原型均在 DeathMatch |
@@ -310,7 +312,7 @@ CombatKillBus.KillCommitted(KillReport)
 - `Assets/01_Project/Scripts/Combat/`：`IDamageable`（**`ApplyDamage` 两则重载**）、**`KillReport`**、**`CombatKillBus`**、`Health`、`ShotHitInfo`、**`HitscanShotResolver`**、**`FpsHitscanWeapon`**、**`FpsTestDummyEnemy`**（测试：需同挂 **`Health`**，游荡 + 随机复活）
 - `Assets/01_Project/Data/Weapons/`：**`Hitscan_Rifle_Standard`**、**`Hitscan_Pistol_Standard`** 等（**`Create → FpsDemo → Data → Hitscan Weapon Config`** 可再建）
 - `Assets/01_Project/Scripts/UI/`：`AmmoHub`、`FpsCrosshairHitFeedback`、**`DeathmatchHudView`**（死斗：时间、排行、击杀条、血量）
-- `Assets/01_Project/Scripts/Audio/`：`AudioManager`、`FpsWeaponAudioObserver`
+- `Assets/01_Project/Scripts/Audio/`：`AudioManager`、`FpsWeaponAudioObserver`、`FpsHitscanSurfaceAudioFeedback`
 - `Assets/01_Project/Scripts/Core/`：`DontDestroyThisRoot`（通用：仅挂在场景根，用于 DDOL）
 - `Assets/01_Project/Scripts/Match/`：**`MatchParticipant`**、**`MatchManager`**、**`MatchResult`** / **`MatchEndReason`**
 - `Assets/01_Project/Scripts/Ai/`：**`FpsAiHitscanWeapon`**（人机 Hitscan）、**`FpsAiHitscanShooter`**（行为：朝玩家开火）；联机可不挂
@@ -329,6 +331,7 @@ CombatKillBus.KillCommitted(KillReport)
 | `AudioManager` | 单例：拖 **`AudioSource`**（2D）；**`PlayOneShot2D`**；**不在此脚本上 DDOL** |
 | `DontDestroyThisRoot`（`Core`） | 挂在**场景根**（如 **`--DDOL--`**），`Awake` 里 **`DontDestroyOnLoad`** 本物体；与音频无关 |
 | `FpsWeaponAudioObserver` | 订阅 **`FpsHitscanWeapon.ShotFired` / `ReloadStarted`**，拖 **Clip**，调 **`AudioManager`** |
+| `FpsHitscanSurfaceAudioFeedback` | 仅 Player：订阅 **`ShotResolved`**，**可伤害体 / 环境** 各一 **Clip**，调 **`AudioManager`** |
 | `HitscanWeaponConfig`（`Scripts/Data/`） | **ScriptableObject**：伤害、射速、弹药、射程、**后座**（`Recoil*`）；**勿在运行时改磁盘 asset**；菜单 **Create → FpsDemo → Data → Hitscan Weapon Config** |
 | `FpsHitscanWeapon` | 玩家 Hitscan：拖 **`_configs`**、**`FpsInput`**、**`Main Camera`**；命中经 **`HitscanShotResolver`**；事件 **`ShotHitDamageable`** → **`ShotResolved`** → **`ShotFired`** |
 | `FpsRecoilController` | 订阅 **`ShotFired`**，拖 **`FpsHitscanWeapon`**、**后座用 Transform**（一般为 **Main Camera**）；**`LateUpdate`** 恢复后座角 |
