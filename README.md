@@ -166,7 +166,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
-| 2026-04-08 | **`KillStreakAudioFeedback`**：改挂 **`Player` 根**（与枪声观察者一致）；`Killer == Player` + `IsLocalPlayer`；`CombatKillBus` + 时间窗；`AudioManager` 播音 |
+| 2026-04-08 | **连杀链路**：**`KillStreakTracker`**（Player 根，**`CombatKillBus`** + 时间窗）→ **`StreakChanged`**；**`KillStreakAudioFeedback`** 播音；**`KillStreakHudPlaceholder`**（`DeathmatchHUD` + **`KillStreakPlaceholder`** **`TMP_Text`**） |
 | 2026-04-08 | **`FpsHitscanSurfaceAudioFeedback`**（仅 Player）：`ShotResolved` + `HasWorldHit`；`HitDamageable` → `S_WEP_Impact_Bullet_02`，否则 `S_WEP_Impact_Bullet_01` |
 | 2026-04-08 | **`HitscanImpactVfxFeedback`**：订阅 `ShotResolved`；`HitDamageable` 用 `VFX_Blood_01`，否则 `VFX_Classic_03`（WALLCOEUR 包）；挂 **Player** 与 **Bot1** |
 | 2026-04-08 | 回退：移除 **`PlayerHitscanVfxFeedback`** / **`AiHitscanVfxFeedback`**（射击命中/枪口特效脚本与场景挂载），武器逻辑仍为 `FpsHitscanWeapon` / `FpsAiHitscanWeapon` |
@@ -225,7 +225,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 - **`AudioManager`**（单例）：可放在 **`--DDOL--`** 子物体上；拖 **`AudioSource`** → **`_oneShot2D`**，**Spatial Blend = 0**，**Play On Awake** 关。  
 - **`DontDestroyOnLoad`**：Unity 要求只对 **Hierarchy 无父物体的根** 调用；**不要**在 `AudioManager` 子物体上 DDOL。在 **`--DDOL--`**（须为**顶层**空物体）上加 **`DontDestroyThisRoot`**，整棵子树（含 `AudioManager`）会随根保留。  
 - **`FpsWeaponAudioObserver`**（与 **`FpsHitscanWeapon` 同物体** 或同 **Player**）：拖 **`FpsHitscanWeapon`**（空则同物体 **`GetComponent`**）、**开火/换弹 Clip**。未挂观察者则**无枪声**（武器仍正常射击）。  
-- **`KillStreakAudioFeedback`**（挂**本地 `Player` 根**，与 **`FpsWeaponAudioObserver`** 并列）：订阅 **`CombatKillBus`**，击杀者为 **`Player` 根**且 **`MatchParticipant.IsLocalPlayer`** 时播音；拖 **5 条**连杀音效（单杀→五杀），可调 **`Streak Window Seconds`**（**unscaled**）；经 **`AudioManager.PlayOneShot2D`**。**`Match Manager` / 参与者 / `Health`** 可留空，脚本会 **`GetComponent`** / **`Instance`** 解析。  
+- **`KillStreakTracker`**（**本地 `Player` 根**）：维护连杀数；订阅 **`CombatKillBus`**；**`Streak Window Seconds`**（**unscaled**）；死亡 / **`MatchEnded`** / 超时清零；**`StreakChanged(int)`** 供音效与 UI。**`KillStreakAudioFeedback`**（同物体）：订阅 **`StreakChanged`**，拖 **5 条** `AudioClip`（单杀→五杀），经 **`AudioManager.PlayOneShot2D`**。**`KillStreakHudPlaceholder`**（如 **`DeathmatchHUD`**）：拖 **`TMP_Text`**，格式 **`Format`** 默认「连杀 x{0}」，**`Tracker`** 可空（用 **`KillStreakTracker.Local`**）。  
 - **以后**：脚步声、UI 等可再写 **观察者** 或继续调用 **`AudioManager`**。
 
 ### 通讯关系（观察者）
@@ -313,10 +313,10 @@ CombatKillBus.KillCommitted(KillReport)
 - `Assets/01_Project/Scripts/Data/`：**`HitscanWeaponConfig`**（ScriptableObject 模板，与 `Assets/01_Project/Data/Weapons/` 下 `.asset` 对应）
 - `Assets/01_Project/Scripts/Combat/`：`IDamageable`（**`ApplyDamage` 两则重载**）、**`KillReport`**、**`CombatKillBus`**、`Health`、`ShotHitInfo`、**`HitscanShotResolver`**、**`FpsHitscanWeapon`**、**`FpsTestDummyEnemy`**（测试：需同挂 **`Health`**，游荡 + 随机复活）
 - `Assets/01_Project/Data/Weapons/`：**`Hitscan_Rifle_Standard`**、**`Hitscan_Pistol_Standard`** 等（**`Create → FpsDemo → Data → Hitscan Weapon Config`** 可再建）
-- `Assets/01_Project/Scripts/UI/`：`AmmoHub`、`FpsCrosshairHitFeedback`、**`DeathmatchHudView`**（死斗：时间、排行、击杀条、血量）
+- `Assets/01_Project/Scripts/UI/`：`AmmoHub`、`FpsCrosshairHitFeedback`、**`DeathmatchHudView`**（死斗：时间、排行、击杀条、血量）、**`KillStreakHudPlaceholder`**
 - `Assets/01_Project/Scripts/Audio/`：`AudioManager`、`FpsWeaponAudioObserver`、`FpsHitscanSurfaceAudioFeedback`、**`KillStreakAudioFeedback`**
 - `Assets/01_Project/Scripts/Core/`：`DontDestroyThisRoot`（通用：仅挂在场景根，用于 DDOL）
-- `Assets/01_Project/Scripts/Match/`：**`MatchParticipant`**、**`MatchManager`**、**`MatchResult`** / **`MatchEndReason`**
+- `Assets/01_Project/Scripts/Match/`：**`MatchParticipant`**、**`MatchManager`**、**`MatchResult`** / **`MatchEndReason`**、**`KillStreakTracker`**
 - `Assets/01_Project/Scripts/Ai/`：**`FpsAiHitscanWeapon`**（人机 Hitscan）、**`FpsAiHitscanShooter`**（行为：朝玩家开火）；联机可不挂
 - `Assets/01_Project/Scripts/Fps/FpsPlayerMotor.cs`：`FpsPlayerMotor`（与 `Player` 同物体）
 
@@ -348,7 +348,9 @@ CombatKillBus.KillCommitted(KillReport)
 | `MatchParticipant` | 参战者身份与显示名；进 **`MatchManager`** 记分表 |
 | `MatchManager` | 订阅 **`CombatKillBus`**、倒计时与目标击杀、**`MatchEnded`**、占位结算、**`RestartMatch`** |
 | `DeathmatchHudView` | 读 **`MatchManager`**、**`CombatKillBus`**、本地 **`Health`**；顶栏/右上/左下 HUD |
-| `KillStreakAudioFeedback` | 挂**本地 Player 根**：订阅 **`CombatKillBus`**，`Killer` 为本物体且 **`IsLocalPlayer`** 时按**时间窗**累加连杀（1～5），经 **`AudioManager.PlayOneShot2D`**；本地死亡、**`MatchEnded`**、超时清零 |
+| `KillStreakTracker` | **本地 Player 根**：**`CombatKillBus`** + 时间窗；**`StreakChanged(int)`**；死亡 / **`MatchEnded`** / 超时清零 |
+| `KillStreakAudioFeedback` | 同 **`Player`**：订阅 **`KillStreakTracker.StreakChanged`**，按档位 **`AudioManager.PlayOneShot2D`**（1～5） |
+| `KillStreakHudPlaceholder` | **Canvas / `DeathmatchHUD`**：拖 **`TMP_Text`**，订阅 **`KillStreakTracker.Local`** 的 **`StreakChanged`** |
 
 **挂载**：`FpsInput` / `FpsPlayerLook` / `FpsPlayerMotor` 均在 **`Player`** 上；梯子为场景内单独物体，加 **BoxCollider（Is Trigger）** + **`FpsLadder`**。`FpsHitscanWeapon` 挂在 **`Player` 根**（或空子物体）上，**不要**挂在电机上；**`_configs`** 填多份 **`HitscanWeaponConfig`**（如步枪 + 手枪）；**`1`/`2`** 切枪；若有两套武器模型，将根物体拖入 **`_weaponVisualRoots`** 与槽位对齐。另拖 **`FpsInput`**、**`MainCamera`**。枪声：同物体加 **`FpsWeaponAudioObserver`**（拖武器与 Clip），场景内放 **`AudioManager`**。
 
