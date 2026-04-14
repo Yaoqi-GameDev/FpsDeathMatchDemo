@@ -42,6 +42,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 | 蹲 | Ctrl（**按住**，非切换） |
 | 交互（上梯等） | F |
 | 开火 | 鼠标左键（默认；`FpsInput` 可改键） |
+| 瞄准（ADS） | 鼠标右键（默认；`FpsInput` 的 **Aim Mouse Button**） |
 | 换弹 | R（默认） |
 | 武器槽 0 / 1（多配置时） | **1** / **2**（主键盘数字，默认 `Alpha1` / `Alpha2`，见 `FpsInput`） |
 
@@ -107,7 +108,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 - **伤害**：`IDamageable` + **`Health`**（可受伤物体挂 Collider + `Health`，默认死亡 **`Destroy`**）。
 - **弹药 HUD**：`AmmoHub` 读武器公开属性写入 **TextMeshPro**；**`--UI--` → GamePlayCanvas → Canvas** 下与 **Crosshair** 并列；**Canvas Scaler** 建议 **Scale With Screen Size**；弹药 **RectTransform** 锚 **右下角** 以适配分辨率。
 - **准星命中**：`FpsCrosshairHitFeedback` 订阅 **`ShotHitDamageable`**（仅命中可受伤目标为 `true`）。
-- **音效**：**`FpsHitscanWeapon`** 发 C# 事件 **`ShotFired`** / **`ReloadStarted`**（无音频引用）；**`FpsWeaponAudioObserver`** 订阅并拖 **`AudioClip`**，经单例 **`AudioManager.PlayOneShot2D`** 播放。
+- **音效**：**`FpsHitscanWeapon`** 发 C# 事件 **`ShotFired`** / **`ReloadStarted`**（无音频引用）；**`FpsWeaponAudioObserver`** 订阅并拖 **`AudioClip`**，经单例 **`AudioManager.PlayOneShot2D`** 播放。**命中（人/墙）**：**`FpsHitscanSurfaceAudioFeedback`** 订阅 **`ShotResolved`**，拖 **`_hitDamageableClip`** / **`_hitWorldClip`**（仅 Player；人机未挂）。
 
 ### 近期计划（未实现）
 
@@ -166,6 +167,16 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-04-08 | **`FpsAdsWorldFov`**：主相机开镜 **FOV** 平滑过渡（**`FpsInput.AimHeld`**）；**`Hip Fov`=0** 时 **Start** 读取当前相机；勿挂手臂相机 |
+| 2026-04-08 | **`FpsWeaponViewModelAnimator`**：**`Aiming`** 默认脚本插值（**`Smooth Aiming Parameter`**），避免混合树单帧 0/1 硬切；可调 **Blend In/Out Speed** |
+| 2026-04-08 | **`FpsInput`**：**`AimHeld`**（默认鼠标右键，可改 **`FpsMouseButton`**）；**`FpsWeaponViewModelAnimator`**：同步 Infima **`Aim`** / **`Aiming`**（手臂），武器模型 **`Aiming`**；瞄准时关 **`Running`** 姿势 |
+| 2026-04-08 | **`FpsWeaponViewModelAnimator`**：手臂 **`Running`** ← **`FpsPlayerMotor.ShouldDriveArmsSprintRunningPose`**（贴地、正常模式、**Shift + WASD 有移动**；非滑铲/爬梯）；**`FireHeld`** 关 **`Running`**；**`LateUpdate`** 写入（晚于 **`FpsPlayerMotor`** 本帧移动）；**开镜走路速度** 仍由 **`FpsPlayerMotor`** 日后处理 |
+| 2026-04-08 | **第一人称视图动画**：**`FpsWeaponViewModelAnimator`** 直接订阅 **`FpsHitscanWeapon`**（**`CrossFade` 辅助逻辑** 内嵌于本类）；**删除**旧桥接 / Infima 接收器；**移除** **`IWeaponViewModelAnimationSource`** |
+| 2026-04-08 | **`FpsHitscanWeapon`**：可选 **`DryFire`**（弹匣空 + 本帧按下开火）、**`WeaponSlotChanged(int)`**（切槽 / 复活回槽 0）；**`_emitDryFireWhenEmpty`**；换弹开始后同帧不触发空枪 |
+| 2026-04-08 | **连杀链路**：**`KillStreakTracker`**（Player 根，**`CombatKillBus`** + 时间窗）→ **`StreakChanged`**；**`KillStreakAudioFeedback`** 播音；**`KillStreakHudPlaceholder`**（`DeathmatchHUD` + **`KillStreakPlaceholder`** **`TMP_Text`**） |
+| 2026-04-08 | **`FpsHitscanSurfaceAudioFeedback`**（仅 Player）：`ShotResolved` + `HasWorldHit`；`HitDamageable` → `S_WEP_Impact_Bullet_02`，否则 `S_WEP_Impact_Bullet_01` |
+| 2026-04-08 | **`HitscanImpactVfxFeedback`**：订阅 `ShotResolved`；`HitDamageable` 用 `VFX_Blood_01`，否则 `VFX_Classic_03`（WALLCOEUR 包）；挂 **Player** 与 **Bot1** |
+| 2026-04-08 | 回退：移除 **`PlayerHitscanVfxFeedback`** / **`AiHitscanVfxFeedback`**（射击命中/枪口特效脚本与场景挂载），武器逻辑仍为 `FpsHitscanWeapon` / `FpsAiHitscanWeapon` |
 | 2026-04-08 | 结算时解锁光标；`FpsPlayerLook` 在对局已结束时不左键重锁光标、不转视角，避免 Again 等 UI 点击被 FPS 光标逻辑吞掉 |
 | 2026-04-08 | 初版：移动方案、输入路线、Ctrl/梯子/滑铲/连跳/分阶段与 README 维护约定 |
 | 2026-04-08 | 蹲为按住；Lobby 仅预留网络/大厅，玩法与原型均在 DeathMatch |
@@ -221,6 +232,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 - **`AudioManager`**（单例）：可放在 **`--DDOL--`** 子物体上；拖 **`AudioSource`** → **`_oneShot2D`**，**Spatial Blend = 0**，**Play On Awake** 关。  
 - **`DontDestroyOnLoad`**：Unity 要求只对 **Hierarchy 无父物体的根** 调用；**不要**在 `AudioManager` 子物体上 DDOL。在 **`--DDOL--`**（须为**顶层**空物体）上加 **`DontDestroyThisRoot`**，整棵子树（含 `AudioManager`）会随根保留。  
 - **`FpsWeaponAudioObserver`**（与 **`FpsHitscanWeapon` 同物体** 或同 **Player**）：拖 **`FpsHitscanWeapon`**（空则同物体 **`GetComponent`**）、**开火/换弹 Clip**。未挂观察者则**无枪声**（武器仍正常射击）。  
+- **`KillStreakTracker`**（**本地 `Player` 根**）：维护连杀数；订阅 **`CombatKillBus`**；**`Streak Window Seconds`**（**unscaled**）；死亡 / **`MatchEnded`** / 超时清零；**`StreakChanged(int)`** 供音效与 UI。**`KillStreakAudioFeedback`**（同物体）：订阅 **`StreakChanged`**，拖 **5 条** `AudioClip`（单杀→五杀），经 **`AudioManager.PlayOneShot2D`**。**`KillStreakHudPlaceholder`**（如 **`DeathmatchHUD`**）：拖 **`TMP_Text`**，格式 **`Format`** 默认「连杀 x{0}」，**`Tracker`** 可空（用 **`KillStreakTracker.Local`**）。  
 - **以后**：脚步声、UI 等可再写 **观察者** 或继续调用 **`AudioManager`**。
 
 ### 通讯关系（观察者）
@@ -304,14 +316,14 @@ CombatKillBus.KillCommitted(KillReport)
 
 ## 脚本说明
 
-- `Assets/01_Project/Scripts/Fps/`：`FpsInput`、`FpsPlayerLook`、`FpsLadder`、**`FpsRecoilController`**（后座，一般挂 **Main Camera**）、**`PlayerDeathRespawn`**（死亡灰幕、禁玩法输入、仅保留视角、区域内随机复活）
+- `Assets/01_Project/Scripts/Fps/`：`FpsInput`、`FpsPlayerLook`、`FpsLadder`、**`FpsRecoilController`**（后座，一般挂 **Main Camera**）、**`FpsAdsWorldFov`**（主相机开镜 **FOV**）、**`FpsWeaponViewModelAnimator`**（订阅 **`FpsHitscanWeapon`**，内含 Layer/状态 **`CrossFade`**）、**`PlayerDeathRespawn`**（死亡灰幕、禁玩法输入、仅保留视角、区域内随机复活）
 - `Assets/01_Project/Scripts/Data/`：**`HitscanWeaponConfig`**（ScriptableObject 模板，与 `Assets/01_Project/Data/Weapons/` 下 `.asset` 对应）
 - `Assets/01_Project/Scripts/Combat/`：`IDamageable`（**`ApplyDamage` 两则重载**）、**`KillReport`**、**`CombatKillBus`**、`Health`、`ShotHitInfo`、**`HitscanShotResolver`**、**`FpsHitscanWeapon`**、**`FpsTestDummyEnemy`**（测试：需同挂 **`Health`**，游荡 + 随机复活）
 - `Assets/01_Project/Data/Weapons/`：**`Hitscan_Rifle_Standard`**、**`Hitscan_Pistol_Standard`** 等（**`Create → FpsDemo → Data → Hitscan Weapon Config`** 可再建）
-- `Assets/01_Project/Scripts/UI/`：`AmmoHub`、`FpsCrosshairHitFeedback`、**`DeathmatchHudView`**（死斗：时间、排行、击杀条、血量）
-- `Assets/01_Project/Scripts/Audio/`：`AudioManager`、`FpsWeaponAudioObserver`
+- `Assets/01_Project/Scripts/UI/`：`AmmoHub`、`FpsCrosshairHitFeedback`、**`DeathmatchHudView`**（死斗：时间、排行、击杀条、血量）、**`KillStreakHudPlaceholder`**
+- `Assets/01_Project/Scripts/Audio/`：`AudioManager`、`FpsWeaponAudioObserver`、`FpsHitscanSurfaceAudioFeedback`、**`KillStreakAudioFeedback`**
 - `Assets/01_Project/Scripts/Core/`：`DontDestroyThisRoot`（通用：仅挂在场景根，用于 DDOL）
-- `Assets/01_Project/Scripts/Match/`：**`MatchParticipant`**、**`MatchManager`**、**`MatchResult`** / **`MatchEndReason`**
+- `Assets/01_Project/Scripts/Match/`：**`MatchParticipant`**、**`MatchManager`**、**`MatchResult`** / **`MatchEndReason`**、**`KillStreakTracker`**
 - `Assets/01_Project/Scripts/Ai/`：**`FpsAiHitscanWeapon`**（人机 Hitscan）、**`FpsAiHitscanShooter`**（行为：朝玩家开火）；联机可不挂
 - `Assets/01_Project/Scripts/Fps/FpsPlayerMotor.cs`：`FpsPlayerMotor`（与 `Player` 同物体）
 
@@ -319,7 +331,7 @@ CombatKillBus.KillCommitted(KillReport)
 
 | 脚本 | 职责 |
 |------|------|
-| `FpsInput` | Legacy 输入：移动轴、视角增量、跳/疾跑/蹲、**蹲按下沿**、**F 交互**、**开火（按住/按下沿）**、**换弹** |
+| `FpsInput` | Legacy 输入：移动轴、视角增量、跳/疾跑/蹲、**蹲按下沿**、**F 交互**、**开火**、**瞄准（按住）**、**换弹** |
 | `FpsPlayerLook` | 身体 Yaw、`CameraPivot` Pitch、光标锁定 |
 | `FpsPlayerMotor` | `CharacterController`：走跑蹲跳、**滑铲**、**梯子**、连跳惩罚、蹲/滑铲/站立时胶囊与相机高度 |
 | `FpsLadder` | 挂在梯子物体上（**Trigger 碰撞体**），玩家进入范围后由电机处理 **F** 攀爬 |
@@ -328,9 +340,11 @@ CombatKillBus.KillCommitted(KillReport)
 | `AudioManager` | 单例：拖 **`AudioSource`**（2D）；**`PlayOneShot2D`**；**不在此脚本上 DDOL** |
 | `DontDestroyThisRoot`（`Core`） | 挂在**场景根**（如 **`--DDOL--`**），`Awake` 里 **`DontDestroyOnLoad`** 本物体；与音频无关 |
 | `FpsWeaponAudioObserver` | 订阅 **`FpsHitscanWeapon.ShotFired` / `ReloadStarted`**，拖 **Clip**，调 **`AudioManager`** |
+| `FpsHitscanSurfaceAudioFeedback` | 仅 Player：订阅 **`ShotResolved`**，**可伤害体 / 环境** 各一 **Clip**，调 **`AudioManager`** |
 | `HitscanWeaponConfig`（`Scripts/Data/`） | **ScriptableObject**：伤害、射速、弹药、射程、**后座**（`Recoil*`）；**勿在运行时改磁盘 asset**；菜单 **Create → FpsDemo → Data → Hitscan Weapon Config** |
-| `FpsHitscanWeapon` | 玩家 Hitscan：拖 **`_configs`**、**`FpsInput`**、**`Main Camera`**；命中经 **`HitscanShotResolver`**；事件 **`ShotHitDamageable`** → **`ShotResolved`** → **`ShotFired`** |
+| `FpsHitscanWeapon` | 玩家 Hitscan：拖 **`_configs`**、**`FpsInput`**、**`Main Camera`**；命中经 **`HitscanShotResolver`**；事件 **`ShotHitDamageable`** → **`ShotResolved`** → **`ShotFired`**；可选 **`DryFire`**、**`WeaponSlotChanged(int)`**；**`GetWeaponVisualRoot(int)`** |
 | `FpsRecoilController` | 订阅 **`ShotFired`**，拖 **`FpsHitscanWeapon`**、**后座用 Transform**（一般为 **Main Camera**）；**`LateUpdate`** 恢复后座角 |
+| `FpsWeaponViewModelAnimator` | 与 **`FpsHitscanWeapon` 同物体**：拖 **`FpsInput`**、**`FpsPlayerMotor`**（空则同物体 **`GetComponent`**）；**`Running`** ← **`ShouldDriveArmsSprintRunningPose`**；**`FireHeld` / `AimHeld`** 时关 **`Running`**；**`Aim` / `Aiming`** 同步 Infima 手臂与武器 **`Aiming`**；**`WeaponViewModelAnimRouting`**；切槽 **`RuntimeAnimatorController`** |
 | `ShotHitInfo` | **readonly struct**：命中点、法线、是否可受伤等；**`ShotResolved`** 载荷 |
 | `FpsCrosshairHitFeedback` | 准星：拖 **`Image`**、**`FpsHitscanWeapon`**；订阅 **`ShotHitDamageable`** |
 | `AmmoHub` | 弹药 HUD：拖 **`FpsHitscanWeapon`**、**TMP_Text**；可改 **`_format`** 字符串 |
@@ -342,14 +356,17 @@ CombatKillBus.KillCommitted(KillReport)
 | `MatchParticipant` | 参战者身份与显示名；进 **`MatchManager`** 记分表 |
 | `MatchManager` | 订阅 **`CombatKillBus`**、倒计时与目标击杀、**`MatchEnded`**、占位结算、**`RestartMatch`** |
 | `DeathmatchHudView` | 读 **`MatchManager`**、**`CombatKillBus`**、本地 **`Health`**；顶栏/右上/左下 HUD |
+| `KillStreakTracker` | **本地 Player 根**：**`CombatKillBus`** + 时间窗；**`StreakChanged(int)`**；死亡 / **`MatchEnded`** / 超时清零 |
+| `KillStreakAudioFeedback` | 同 **`Player`**：订阅 **`KillStreakTracker.StreakChanged`**，按档位 **`AudioManager.PlayOneShot2D`**（1～5） |
+| `KillStreakHudPlaceholder` | **Canvas / `DeathmatchHUD`**：拖 **`TMP_Text`**，订阅 **`KillStreakTracker.Local`** 的 **`StreakChanged`** |
 
-**挂载**：`FpsInput` / `FpsPlayerLook` / `FpsPlayerMotor` 均在 **`Player`** 上；梯子为场景内单独物体，加 **BoxCollider（Is Trigger）** + **`FpsLadder`**。`FpsHitscanWeapon` 挂在 **`Player` 根**（或空子物体）上，**不要**挂在电机上；**`_configs`** 填多份 **`HitscanWeaponConfig`**（如步枪 + 手枪）；**`1`/`2`** 切枪；若有两套武器模型，将根物体拖入 **`_weaponVisualRoots`** 与槽位对齐。另拖 **`FpsInput`**、**`MainCamera`**。枪声：同物体加 **`FpsWeaponAudioObserver`**（拖武器与 Clip），场景内放 **`AudioManager`**。
+**挂载**：`FpsInput` / `FpsPlayerLook` / `FpsPlayerMotor` 均在 **`Player`** 上；梯子为场景内单独物体，加 **BoxCollider（Is Trigger）** + **`FpsLadder`**。`FpsHitscanWeapon` 挂在 **`Player` 根**（或空子物体）上，**不要**挂在电机上；**`_configs`** 填多份 **`HitscanWeaponConfig`**（如步枪 + 手枪）；**`1`/`2`** 切枪；若有两套武器模型，将根物体拖入 **`_weaponVisualRoots`** 与槽位对齐。另拖 **`FpsInput`**、**`MainCamera`**。第一人称手臂/枪骨骼：与 **`FpsHitscanWeapon` 同物体**加 **`FpsWeaponViewModelAnimator`**，拖手臂 **`Animator`**、每槽 **`RuntimeAnimatorController`**、**`WeaponViewModelAnimRouting`**（与所用 Controller 一致）。若动画片段含 **Animation Event**，需在 **`Animator`** 同物体上自行提供同名 **public** 方法或改资源。枪声：**`FpsWeaponAudioObserver`** + **`AudioManager`**。
 
 - `FpsPlayerMotor`：拖入 **`FpsInput`**、**`CameraPivot`**；滑铲/梯子参数在 Inspector 可调。
 
 **角色比例**：站立高约 **1.7m**（Y 缩放 **0.85**），半径 **0.35m**（XZ 缩放 **0.7**），略窄于常见门框，便于低模巷战场景通过门洞。`DeathMatch` 内 Player 已对齐。
 
-执行顺序：`FpsInput`（-100）→ `FpsPlayerLook`（-50）→ `FpsHitscanWeapon`（-40）→ `FpsPlayerMotor`（0）。即：输入 → 视角 → 武器 → 移动。
+执行顺序：`FpsInput`（-100）→ `FpsPlayerLook`（-50）→ `FpsHitscanWeapon`（-40）→ **`FpsWeaponViewModelAnimator`（-38）** → `FpsPlayerMotor`（0）。手臂 **`Running`** 在 **`FpsWeaponViewModelAnimator.LateUpdate`** 写入，故仍晚于本帧 **`FpsPlayerMotor.Update`**（与 **`isGrounded`** 对齐）。
 
 ---
 

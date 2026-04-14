@@ -9,7 +9,8 @@ namespace FpsDemo.Combat
     /// 第一人称 Hitscan：从 <see cref="Camera"/> 中心射线，命中 <see cref="IDamageable"/>，调用 <c>ApplyDamage(伤害, 伤害来源)</c>；伤害来源为 <see cref="Transform.root"/>（与 <c>Player</c> 根一致）。
     /// 射线<strong>包含</strong> Player 层，以便打人机/他人；<strong>同一角色根</strong>上的命中视为自伤并跳过（<c>TryResolveShot</c>）。
     /// 读 <see cref="FpsInput"/>；支持多份 <see cref="HitscanWeaponConfig"/> 与切枪（<b>1</b>/<b>2</b>），每槽独立弹药；可选拖「武器模型根」显隐。命中解析见 <see cref="HitscanShotResolver"/>；人机请用 <c>FpsAiHitscanWeapon</c>。
-    /// 事件：<see cref="ShotHitDamageable"/>、<see cref="ShotResolved"/>、<see cref="ShotFired"/>（顺序）、<see cref="ReloadStarted"/>。
+    /// 事件：<see cref="ShotHitDamageable"/>、<see cref="ShotResolved"/>、<see cref="ShotFired"/>（顺序）、<see cref="ReloadStarted"/>、
+    /// <see cref="DryFire"/>（弹匣空时本帧按下开火）、<see cref="WeaponSlotChanged"/>（槽位变化后，参数为新下标）。
     /// </summary>
     [DefaultExecutionOrder(-40)]
     public sealed class FpsHitscanWeapon : MonoBehaviour
@@ -28,11 +29,21 @@ namespace FpsDemo.Combat
         [Tooltip("未在 Inspector 勾选任何层时，使用 Physics.DefaultRaycastLayers（含 Player，便于命中角色；自伤由脚本按根物体跳过）。")]
         [SerializeField] private LayerMask _hitLayers;
 
+        [Header("动画 / 桥接（可选）")]
+        [Tooltip("弹匣为 0 且本帧按下开火时触发 DryFire（与 ShotFired 互斥）；用于 FP 空枪动画等。")]
+        [SerializeField] private bool _emitDryFireWhenEmpty = true;
+
         /// <summary>成功扣弹并发射一次（射线已执行）；订阅者勿阻塞主线程。</summary>
         public event Action ShotFired;
 
         /// <summary>换弹流程已开始（计时器已启动）。</summary>
         public event Action ReloadStarted;
+
+        /// <summary>弹匣为空时本帧按下开火（<see cref="FpsInput.FirePressedThisFrame"/>）；换弹进行中不触发。</summary>
+        public event Action DryFire;
+
+        /// <summary>当前槽位已切换；参数为新 <see cref="CurrentWeaponIndex"/>。</summary>
+        public event Action<int> WeaponSlotChanged;
 
         /// <summary>本发射线结束后：是否命中带 <see cref="IDamageable"/> 的物体（未命中或只打到环境则为 <c>false</c>）。</summary>
         public event Action<bool> ShotHitDamageable;
@@ -49,6 +60,14 @@ namespace FpsDemo.Combat
         public int AmmoInMagazine => _magazinePerSlot[_currentIndex];
         public int ReserveAmmo => _reservePerSlot[_currentIndex];
         public bool IsReloading { get; private set; }
+
+        /// <summary>槽位对应的武器显隐根（与 <see cref="_weaponVisualRoots"/> 一致）；供视图层桥接取 <see cref="Animator"/>。</summary>
+        public GameObject GetWeaponVisualRoot(int index)
+        {
+            if (_weaponVisualRoots == null || index < 0 || index >= _weaponVisualRoots.Length)
+                return null;
+            return _weaponVisualRoots[index];
+        }
 
         private int _currentIndex;
         private int[] _magazinePerSlot;
@@ -115,7 +134,18 @@ namespace FpsDemo.Combat
             if (_input.ReloadPressedThisFrame)
                 TryBeginReload();
 
-            if (!_input.FireHeld || AmmoInMagazine <= 0)
+            if (IsReloading)
+                return;
+
+            if (AmmoInMagazine <= 0)
+            {
+                if (_emitDryFireWhenEmpty && _input.FirePressedThisFrame)
+                    DryFire?.Invoke();
+
+                return;
+            }
+
+            if (!_input.FireHeld)
                 return;
 
             float rate = Current.FireRatePerSecond;
@@ -135,6 +165,7 @@ namespace FpsDemo.Combat
 
             IsReloading = false;
             _nextFireTime = 0f;
+            int prevSlot = _currentIndex;
             _currentIndex = 0;
 
             for (int i = 0; i < _configs.Length; i++)
@@ -146,6 +177,8 @@ namespace FpsDemo.Combat
             }
 
             ApplyWeaponVisuals();
+            if (prevSlot != 0)
+                WeaponSlotChanged?.Invoke(_currentIndex);
         }
 
         private void TrySwitchWeapon(int index)
@@ -157,6 +190,7 @@ namespace FpsDemo.Combat
             _currentIndex = index;
             _nextFireTime = 0f;
             ApplyWeaponVisuals();
+            WeaponSlotChanged?.Invoke(_currentIndex);
         }
 
         private void ApplyWeaponVisuals()
