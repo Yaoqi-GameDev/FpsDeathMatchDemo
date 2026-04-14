@@ -61,6 +61,14 @@ namespace FpsDemo.Combat
         public int ReserveAmmo => _reservePerSlot[_currentIndex];
         public bool IsReloading { get; private set; }
 
+        /// <summary>槽位对应的武器显隐根（与 <see cref="_weaponVisualRoots"/> 一致）；供视图层桥接取 <see cref="Animator"/>。</summary>
+        public GameObject GetWeaponVisualRoot(int index)
+        {
+            if (_weaponVisualRoots == null || index < 0 || index >= _weaponVisualRoots.Length)
+                return null;
+            return _weaponVisualRoots[index];
+        }
+
         private int _currentIndex;
         private int[] _magazinePerSlot;
         private int[] _reservePerSlot;

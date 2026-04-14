@@ -128,6 +128,25 @@ namespace FpsDemo.Fps
                 ExitLadder(jumpOff: false);
         }
 
+        /// <summary>
+        /// 供手臂 Animator（如 Infima <c>Running</c>）：仅当贴地、正常移动（非滑铲/爬梯）、按住疾跑且 WASD 有移动输入时为真。
+        /// </summary>
+        public bool ShouldDriveArmsSprintRunningPose
+        {
+            get
+            {
+                if (_input == null || _controller == null)
+                    return false;
+                if (_mode != MotorMode.Normal)
+                    return false;
+                if (!_controller.isGrounded)
+                    return false;
+                if (!_input.SprintHeld)
+                    return false;
+                return _input.MoveAxes.sqrMagnitude > 0.0001f;
+            }
+        }
+
         private void UpdateNormal()
         {
             bool grounded = _controller.isGrounded;

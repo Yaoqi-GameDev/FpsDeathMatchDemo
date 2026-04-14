@@ -35,6 +35,8 @@ namespace FpsDemo.Fps
 
         [Header("战斗（Hitscan / 换弹等由其它脚本读取）")]
         [SerializeField] private FpsMouseButton _fireMouseButton = FpsMouseButton.Left;
+        [Tooltip("瞄准（ADS）；默认右键，与开火键分开。")]
+        [SerializeField] private FpsMouseButton _aimMouseButton = FpsMouseButton.Right;
         [SerializeField] private KeyCode _reloadKey = KeyCode.R;
         [Tooltip("切到武器槽 0（多武器时由 FpsHitscanWeapon 读取）。")]
         [SerializeField] private KeyCode _weaponSlot1Key = KeyCode.Alpha1;
@@ -58,6 +60,9 @@ namespace FpsDemo.Fps
         /// <summary>开火键按住（连发用）。</summary>
         public bool FireHeld { get; private set; }
 
+        /// <summary>瞄准键按住（机瞄 / ADS，由 Animator 等读取）。</summary>
+        public bool AimHeld { get; private set; }
+
         /// <summary>开火键本帧刚按下。</summary>
         public bool FirePressedThisFrame { get; private set; }
 
@@ -71,7 +76,7 @@ namespace FpsDemo.Fps
         public bool WeaponSlot2PressedThisFrame { get; private set; }
 
         /// <summary>
-        /// 为 <c>false</c> 时屏蔽移动、跳跃、蹲、交互、开火、换弹、切枪；<b>仍更新</b> <see cref="LookDelta"/>（便于死亡后只转视角）。
+        /// 为 <c>false</c> 时屏蔽移动、跳跃、蹲、交互、开火、瞄准、换弹、切枪；<b>仍更新</b> <see cref="LookDelta"/>（便于死亡后只转视角）。
         /// </summary>
         public bool GameplayInputEnabled { get; set; } = true;
 
@@ -92,6 +97,7 @@ namespace FpsDemo.Fps
                 CrouchPressedThisFrame = false;
                 InteractPressedThisFrame = false;
                 FireHeld = false;
+                AimHeld = false;
                 FirePressedThisFrame = false;
                 ReloadPressedThisFrame = false;
                 WeaponSlot1PressedThisFrame = false;
@@ -112,6 +118,10 @@ namespace FpsDemo.Fps
             int fireIndex = (int)_fireMouseButton;
             FireHeld = Input.GetMouseButton(fireIndex);
             FirePressedThisFrame = Input.GetMouseButtonDown(fireIndex);
+
+            int aimIndex = (int)_aimMouseButton;
+            AimHeld = Input.GetMouseButton(aimIndex);
+
             ReloadPressedThisFrame = Input.GetKeyDown(_reloadKey);
 
             WeaponSlot1PressedThisFrame = Input.GetKeyDown(_weaponSlot1Key);
