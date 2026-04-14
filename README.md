@@ -166,6 +166,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-04-08 | **`FpsHitscanWeapon`**：可选 **`DryFire`**（弹匣空 + 本帧按下开火）、**`WeaponSlotChanged(int)`**（切槽 / 复活回槽 0）；**`_emitDryFireWhenEmpty`**；换弹开始后同帧不触发空枪 |
 | 2026-04-08 | **连杀链路**：**`KillStreakTracker`**（Player 根，**`CombatKillBus`** + 时间窗）→ **`StreakChanged`**；**`KillStreakAudioFeedback`** 播音；**`KillStreakHudPlaceholder`**（`DeathmatchHUD` + **`KillStreakPlaceholder`** **`TMP_Text`**） |
 | 2026-04-08 | **`FpsHitscanSurfaceAudioFeedback`**（仅 Player）：`ShotResolved` + `HasWorldHit`；`HitDamageable` → `S_WEP_Impact_Bullet_02`，否则 `S_WEP_Impact_Bullet_01` |
 | 2026-04-08 | **`HitscanImpactVfxFeedback`**：订阅 `ShotResolved`；`HitDamageable` 用 `VFX_Blood_01`，否则 `VFX_Classic_03`（WALLCOEUR 包）；挂 **Player** 与 **Bot1** |
@@ -335,7 +336,7 @@ CombatKillBus.KillCommitted(KillReport)
 | `FpsWeaponAudioObserver` | 订阅 **`FpsHitscanWeapon.ShotFired` / `ReloadStarted`**，拖 **Clip**，调 **`AudioManager`** |
 | `FpsHitscanSurfaceAudioFeedback` | 仅 Player：订阅 **`ShotResolved`**，**可伤害体 / 环境** 各一 **Clip**，调 **`AudioManager`** |
 | `HitscanWeaponConfig`（`Scripts/Data/`） | **ScriptableObject**：伤害、射速、弹药、射程、**后座**（`Recoil*`）；**勿在运行时改磁盘 asset**；菜单 **Create → FpsDemo → Data → Hitscan Weapon Config** |
-| `FpsHitscanWeapon` | 玩家 Hitscan：拖 **`_configs`**、**`FpsInput`**、**`Main Camera`**；命中经 **`HitscanShotResolver`**；事件 **`ShotHitDamageable`** → **`ShotResolved`** → **`ShotFired`** |
+| `FpsHitscanWeapon` | 玩家 Hitscan：拖 **`_configs`**、**`FpsInput`**、**`Main Camera`**；命中经 **`HitscanShotResolver`**；事件 **`ShotHitDamageable`** → **`ShotResolved`** → **`ShotFired`**；可选 **`DryFire`**、**`WeaponSlotChanged(int)`** |
 | `FpsRecoilController` | 订阅 **`ShotFired`**，拖 **`FpsHitscanWeapon`**、**后座用 Transform**（一般为 **Main Camera**）；**`LateUpdate`** 恢复后座角 |
 | `ShotHitInfo` | **readonly struct**：命中点、法线、是否可受伤等；**`ShotResolved`** 载荷 |
 | `FpsCrosshairHitFeedback` | 准星：拖 **`Image`**、**`FpsHitscanWeapon`**；订阅 **`ShotHitDamageable`** |
