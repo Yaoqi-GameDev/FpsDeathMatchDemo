@@ -80,6 +80,32 @@ namespace FpsDemo.Fps
         /// <summary>松 Shift 后倒计时；按住 Shift 时重置为满。</summary>
         private float _sprintGraceTimer;
 
+        /// <summary>当前水平速度大小（m/s，XZ），供第三人称全身 Animator 等与移动动画对齐。</summary>
+        public float HorizontalSpeed
+        {
+            get
+            {
+                if (_controller == null)
+                    return 0f;
+                return new Vector3(_velocity.x, 0f, _velocity.z).magnitude;
+            }
+        }
+
+        /// <summary>是否常规地面移动（非滑铲、非爬梯）。</summary>
+        public bool IsNormalLocomotion => _mode == MotorMode.Normal;
+
+        /// <summary>是否贴地（CharacterController）。</summary>
+        public bool IsGrounded => _controller != null && _controller.isGrounded;
+
+        /// <summary>竖直速度（m/s，向上为正），供第三人称跳跃/下落与 Animator 对齐。</summary>
+        public float VerticalVelocity => _controller == null ? 0f : _velocity.y;
+
+        /// <summary>走路目标速度（与 Inspector 一致），第三人称 Blend Tree 阈值可对齐。</summary>
+        public float ConfigWalkSpeed => _walkSpeed;
+
+        /// <summary>疾跑目标速度（与 Inspector 一致）。</summary>
+        public float ConfigSprintSpeed => _sprintSpeed;
+
         private void Awake()
         {
             _controller = GetComponent<CharacterController>();

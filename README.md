@@ -167,6 +167,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-04-08 | **`FpsThirdPersonLocomotionAnimator`**：**`IsGrounded`** / **`VerticalSpeed`**；**`FpsPlayerMotor`**：**`VerticalVelocity`**；**`speed`** / **`IsCrouch`** / **`IsAiming`** 同前；**Third Person Root** 隐藏网格 |
 | 2026-04-08 | **`FpsAdsWorldFov`**：主相机开镜 **FOV** 平滑过渡（**`FpsInput.AimHeld`**）；**`Hip Fov`=0** 时 **Start** 读取当前相机；勿挂手臂相机 |
 | 2026-04-08 | **`FpsWeaponViewModelAnimator`**：**`Aiming`** 默认脚本插值（**`Smooth Aiming Parameter`**），避免混合树单帧 0/1 硬切；可调 **Blend In/Out Speed** |
 | 2026-04-08 | **`FpsInput`**：**`AimHeld`**（默认鼠标右键，可改 **`FpsMouseButton`**）；**`FpsWeaponViewModelAnimator`**：同步 Infima **`Aim`** / **`Aiming`**（手臂），武器模型 **`Aiming`**；瞄准时关 **`Running`** 姿势 |
@@ -316,7 +317,7 @@ CombatKillBus.KillCommitted(KillReport)
 
 ## 脚本说明
 
-- `Assets/01_Project/Scripts/Fps/`：`FpsInput`、`FpsPlayerLook`、`FpsLadder`、**`FpsRecoilController`**（后座，一般挂 **Main Camera**）、**`FpsAdsWorldFov`**（主相机开镜 **FOV**）、**`FpsWeaponViewModelAnimator`**（订阅 **`FpsHitscanWeapon`**，内含 Layer/状态 **`CrossFade`**）、**`PlayerDeathRespawn`**（死亡灰幕、禁玩法输入、仅保留视角、区域内随机复活）
+- `Assets/01_Project/Scripts/Fps/`：`FpsInput`、`FpsPlayerLook`、`FpsLadder`、**`FpsRecoilController`**（后座，一般挂 **Main Camera**）、**`FpsAdsWorldFov`**（主相机开镜 **FOV**）、**`FpsThirdPersonLocomotionAnimator`**（第三人称 **speed**）、**`FpsWeaponViewModelAnimator`**（订阅 **`FpsHitscanWeapon`**，内含 Layer/状态 **`CrossFade`**）、**`PlayerDeathRespawn`**（死亡灰幕、禁玩法输入、仅保留视角、区域内随机复活）
 - `Assets/01_Project/Scripts/Data/`：**`HitscanWeaponConfig`**（ScriptableObject 模板，与 `Assets/01_Project/Data/Weapons/` 下 `.asset` 对应）
 - `Assets/01_Project/Scripts/Combat/`：`IDamageable`（**`ApplyDamage` 两则重载**）、**`KillReport`**、**`CombatKillBus`**、`Health`、`ShotHitInfo`、**`HitscanShotResolver`**、**`FpsHitscanWeapon`**、**`FpsTestDummyEnemy`**（测试：需同挂 **`Health`**，游荡 + 随机复活）
 - `Assets/01_Project/Data/Weapons/`：**`Hitscan_Rifle_Standard`**、**`Hitscan_Pistol_Standard`** 等（**`Create → FpsDemo → Data → Hitscan Weapon Config`** 可再建）
