@@ -20,7 +20,8 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 | 输入（原型） | 旧 Input Manager；读输入尽量集中在少数入口，便于后续替换 |
 | 输入（未来） | 新 Input System + Actions，用于改键与多设备 |
 | 网络 | **第一阶段不考虑**；单机验证玩法与手感 |
-| 战斗射线 | **Hitscan**；`Physics.Raycast`，**`QueryTriggerInteraction.Ignore`**；目标需 **非 Trigger** 的 Collider |
+| 战斗射线 | **Hitscan**；`Physics.RaycastAll`，**`QueryTriggerInteraction.Collide`**，角色 **Hitbox 可用 Is Trigger** |
+| 部位伤害 | 武器只填 **基础伤害**（`HitscanWeaponConfig`）；最终伤害 = 基础 × **部位倍率**。Hitbox 挂 **`HitboxBodyRegion`**（头 / 上身 / 四肢）；倍率表可选 **`BodyDamageMultiplierTable`**（菜单 *FpsDemo/Combat/Body Damage Multiplier Table*），未拖则用内建 **头 2 / 上身 1 / 四肢 0.7** |
 | Layer | 角色可在 **Player** 层；武器射线默认 **包含** Player，**自伤**由脚本按 **根物体** 跳过；环境/靶子常用 **Default** 等 |
 
 ---

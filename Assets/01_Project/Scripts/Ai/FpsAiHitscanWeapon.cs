@@ -19,6 +19,10 @@ namespace FpsDemo.Ai
         [Tooltip("未勾选时使用 Physics.DefaultRaycastLayers。")]
         [SerializeField] private LayerMask _hitLayers;
 
+        [Header("伤害")]
+        [Tooltip("可选：部位倍率；未拖则使用内建默认（头 2 / 上身 1 / 四肢 0.7）。")]
+        [SerializeField] private BodyDamageMultiplierTable _bodyDamageMultiplierTable;
+
         /// <summary>成功扣弹并发射一次（射线已执行）。</summary>
         public event Action ShotFired;
 
@@ -79,6 +83,7 @@ namespace FpsDemo.Ai
                 _hitLayers,
                 transform,
                 _config.DamagePerShot,
+                _bodyDamageMultiplierTable,
                 out hitDamageable,
                 out shotInfo);
 
