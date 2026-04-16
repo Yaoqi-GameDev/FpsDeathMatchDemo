@@ -1,7 +1,7 @@
 namespace FpsDemo.Combat
 {
     /// <summary>
-    /// Hitscan 部位倍率分类：与 <see cref="HitboxBodyRegion"/>、<see cref="BodyDamageMultiplierTable"/> 对应。
+    /// Hitscan 部位倍率分类：与 <see cref="HitboxBodyRegion"/>、<see cref="FpsDemo.Data.BodyDamageMultiplierConfig"/> 对应。
     /// </summary>
     public enum DamageBodyRegion
     {

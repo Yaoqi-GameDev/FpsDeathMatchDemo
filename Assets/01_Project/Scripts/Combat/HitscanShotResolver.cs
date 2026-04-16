@@ -1,4 +1,5 @@
 using System;
+using FpsDemo.Data;
 using UnityEngine;
 
 namespace FpsDemo.Combat
@@ -18,7 +19,7 @@ namespace FpsDemo.Combat
             LayerMask hitLayers,
             Transform instigatorWeaponTransform,
             float damagePerShot,
-            BodyDamageMultiplierTable bodyDamageTable,
+            BodyDamageMultiplierConfig bodyDamageConfig,
             out bool hitDamageable,
             out ShotHitInfo shotInfo)
         {
@@ -45,12 +46,12 @@ namespace FpsDemo.Combat
                     var hitbox = h.collider.GetComponent<HitboxBodyRegion>()
                         ?? h.collider.GetComponentInParent<HitboxBodyRegion>();
                     DamageBodyRegion region = hitbox != null ? hitbox.Region : DamageBodyRegion.Unknown;
-                    float mult = BodyDamageMultiplierTable.ResolveMultiplier(region, bodyDamageTable);
+                    float mult = BodyDamageMultiplierConfig.ResolveMultiplier(region, bodyDamageConfig);
                     float finalDamage = damagePerShot * mult;
 
                     hitDamageable = true;
                     damageable.ApplyDamage(finalDamage, instigator);
-                    shotInfo = new ShotHitInfo(true, h.point, h.normal, true, h.collider, region, mult);
+                    shotInfo = new ShotHitInfo(true, h.point, h.normal, true, h.collider, region, mult, damagePerShot, finalDamage);
                     return;
                 }
 

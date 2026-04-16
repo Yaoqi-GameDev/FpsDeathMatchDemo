@@ -30,8 +30,8 @@ namespace FpsDemo.Combat
         [SerializeField] private LayerMask _hitLayers;
 
         [Header("伤害")]
-        [Tooltip("可选：部位倍率表；未拖则使用内建默认（头 2 / 上身 1 / 四肢 0.7）。武器只填基础伤害。")]
-        [SerializeField] private BodyDamageMultiplierTable _bodyDamageMultiplierTable;
+        [Tooltip("可选：部位倍率配置；未拖则使用内建默认（头 2 / 上身 1 / 四肢 0.7）。武器只填基础伤害。")]
+        [SerializeField] private BodyDamageMultiplierConfig _bodyDamageMultiplierConfig;
 
         [Header("动画 / 桥接（可选）")]
         [Tooltip("弹匣为 0 且本帧按下开火时触发 DryFire（与 ShotFired 互斥）；用于 FP 空枪动画等。")]
@@ -248,7 +248,7 @@ namespace FpsDemo.Combat
                 _hitLayers,
                 transform,
                 Current.DamagePerShot,
-                _bodyDamageMultiplierTable,
+                _bodyDamageMultiplierConfig,
                 out bool hitDamageable,
                 out ShotHitInfo shotInfo);
 
