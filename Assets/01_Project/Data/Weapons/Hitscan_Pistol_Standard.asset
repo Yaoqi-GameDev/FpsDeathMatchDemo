@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a4c2e1f9b7d5c3a6e8f0b2d4d6c8a1e, type: 3}
   m_Name: Hitscan_Pistol_Standard
   m_EditorClassIdentifier: 
-  _damagePerShot: 30
+  _damagePerShot: 35
   _fireRatePerSecond: 6
   _magazineSize: 12
   _startingReserveAmmo: 36

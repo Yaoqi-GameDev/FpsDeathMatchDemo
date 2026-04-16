@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e81d714a2a23c1647aa22e9464e2b0e7, type: 3}
   m_Name: BodyDamageMultiplierConfig
   m_EditorClassIdentifier: 
-  _head: 2
+  _head: 3
   _torso: 1
   _limb: 0.7
