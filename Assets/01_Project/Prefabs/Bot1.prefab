@@ -896,7 +896,6 @@ GameObject:
   - component: {fileID: 8705245329758175382}
   - component: {fileID: 6722244730466230684}
   - component: {fileID: 7319581666864612714}
-  - component: {fileID: 5261389285557342096}
   - component: {fileID: 1794145041054156043}
   - component: {fileID: 6903498202865299180}
   - component: {fileID: 2391543325952723275}
@@ -999,23 +998,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   _bodyDamageMultiplierConfig: {fileID: 11400000, guid: 55da9bbc1ab3d0844973eda86ac6c9a4, type: 2}
---- !u!114 &5261389285557342096
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7355534705446416317}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f7e2c9a1b4d64890a1b2c3d4e5f67890, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _playerWeapon: {fileID: 0}
-  _aiWeapon: {fileID: 7319581666864612714}
-  _impactDamageablePrefab: {fileID: 8782009059513614302, guid: 171dda363e9efd94ca9bc63e38ca9658, type: 3}
-  _impactWorldPrefab: {fileID: 467751860875805754, guid: 7c6d9bb9c8994364dbe5ba2e32dd4d13, type: 3}
-  _impactFxLifetimeSeconds: 2
 --- !u!114 &1794145041054156043
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1088,8 +1070,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _agent: {fileID: 6903498202865299180}
-  _health: {fileID: 0}
-  _shooter: {fileID: 0}
+  _health: {fileID: 8705245329758175382}
+  _shooter: {fileID: 6722244730466230684}
   _preferMatchParticipants: 1
   _targetOverride: {fileID: 0}
   _fallbackTargetTag: 
