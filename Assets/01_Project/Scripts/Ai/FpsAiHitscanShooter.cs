@@ -1,23 +1,40 @@
 using FpsDemo.Combat;
+using FpsDemo.Match;
 using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.Serialization;
 
 namespace FpsDemo.Ai
 {
     /// <summary>
-    /// 单机 AI：转向目标、距离与视线检测通过后按间隔调用 <see cref="FpsAiHitscanWeapon.TryFireFromAimTransform"/>。
-    /// 与 <see cref="FpsDemo.Fps.FpsInput"/> 无关；联机场景可不挂本组件。
+    /// 单机 AI：身体（<see cref="_bodyFacing"/>）水平对准目标后才允许开火；<see cref="NavMeshAgent"/> 若存在则关闭 <c>updateRotation</c>，由本脚本转身体。
+    /// 距离、视线、射速仍按原逻辑。与 <see cref="FpsDemo.Fps.FpsInput"/> 无关。
     /// </summary>
     public sealed class FpsAiHitscanShooter : MonoBehaviour
     {
         [SerializeField] private FpsAiHitscanWeapon _weapon;
         [SerializeField] private Transform _aimOrigin;
-        [Tooltip("空：用 Tag 查找；否则用该物体作为目标根（一般为 Player 根）。")]
-        [SerializeField] private Transform _target;
-        [SerializeField] private string _targetTag = "Player";
 
-        [Header("转向")]
-        [SerializeField] private float _rotateSpeedDegrees = 240f;
-        [Tooltip("瞄准点相对目标根的世界 Y 偏移（约胸口高度）。")]
+        [Header("目标")]
+        [Tooltip("勾选：在 MatchParticipant.ActiveParticipants 中选最近存活单位（排除自身）；无可用时再走下方后备。")]
+        [SerializeField] private bool _preferMatchParticipants = true;
+        [Tooltip("优先：固定目标根（调试用）；非空时始终打该 Transform，不走参战者列表。")]
+        [FormerlySerializedAs("_target")]
+        [SerializeField] private Transform _targetOverride;
+        [Tooltip("后备：Tag 查找（仅当未用手动目标且参战者列表无可用目标时）。")]
+        [FormerlySerializedAs("_targetTag")]
+        [SerializeField] private string _fallbackTargetTag = "Player";
+
+        [Header("身体朝向（方案 A：身体对准后才开火）")]
+        [Tooltip("用于判定「身体是否朝向目标」的 Transform，一般为根物体；空则用本物体。")]
+        [SerializeField] private Transform _bodyFacing;
+        [Tooltip("身体水平转向目标的最大角速度（度/秒）。")]
+        [SerializeField] private float _bodyYawRotateSpeedDegrees = 240f;
+        [Tooltip("身体 forward 与目标方向在水平面上夹角 ≤ 此值时才允许开火。")]
+        [SerializeField] private float _maxBodyFireAngleDegrees = 20f;
+        [Tooltip("人机导航：关闭则由本脚本负责身体朝向，避免与「朝速度方向转」冲突。")]
+        [SerializeField] private NavMeshAgent _navAgent;
+        [Tooltip("瞄准点相对目标根的世界 Y 偏移（约胸口）；射线从 Aim Origin 发出。")]
         [SerializeField] private float _aimHeightOffset = 1.2f;
 
         [Header("射击")]
@@ -29,8 +46,47 @@ namespace FpsDemo.Ai
 
         [Header("自身")]
         [SerializeField] private Health _selfHealth;
+        [Tooltip("空则在同物体上取 MatchParticipant，用于排除自己。")]
+        [SerializeField] private MatchParticipant _selfParticipant;
 
         private float _nextFireTime;
+
+        /// <summary>
+        /// 供 <see cref="AiNavChaseTransform"/> 使用：有有效目标且已在射程内、有 LOS 时建议停住站立；否则应继续靠近。
+        /// </summary>
+        public bool TryGetNavigationEngagement(out Transform target, out bool holdPositionOnNavMesh)
+        {
+            target = null;
+            holdPositionOnNavMesh = false;
+
+            if (_weapon == null || _aimOrigin == null)
+                return false;
+
+            if (_selfHealth != null && _selfHealth.IsDead)
+                return false;
+
+            target = ResolveTarget();
+            if (target == null)
+                return false;
+
+            Health targetHealth = target.GetComponentInParent<Health>();
+            if (targetHealth != null && targetHealth.IsDead)
+                return false;
+
+            Vector3 aimPoint = target.position + Vector3.up * _aimHeightOffset;
+            Vector3 to = aimPoint - _aimOrigin.position;
+            if (to.sqrMagnitude < 0.0001f)
+            {
+                holdPositionOnNavMesh = true;
+                return true;
+            }
+
+            float dist = to.magnitude;
+            bool inRange = dist <= _maxAttackRange;
+            bool los = HasLineOfSight(aimPoint, target.root);
+            holdPositionOnNavMesh = inRange && los;
+            return true;
+        }
 
         private void Awake()
         {
@@ -39,9 +95,18 @@ namespace FpsDemo.Ai
 
             if (_aimOrigin == null)
                 _aimOrigin = transform;
+            if (_bodyFacing == null)
+                _bodyFacing = transform;
 
             if (_selfHealth == null)
                 _selfHealth = GetComponent<Health>();
+            if (_selfParticipant == null)
+                _selfParticipant = GetComponent<MatchParticipant>();
+
+            if (_navAgent == null)
+                _navAgent = GetComponent<NavMeshAgent>();
+            if (_navAgent != null)
+                _navAgent.updateRotation = false;
 
             if (_lineOfSightMask.value == 0)
                 _lineOfSightMask = Physics.DefaultRaycastLayers;
@@ -68,17 +133,16 @@ namespace FpsDemo.Ai
             if (to.sqrMagnitude < 0.0001f)
                 return;
 
-            Quaternion look = Quaternion.LookRotation(to.normalized, Vector3.up);
-            _aimOrigin.rotation = Quaternion.RotateTowards(
-                _aimOrigin.rotation,
-                look,
-                _rotateSpeedDegrees * Time.deltaTime);
+            RotateBodyYawTowardWorldDirection(to);
 
             float dist = to.magnitude;
             if (dist > _maxAttackRange)
                 return;
 
             if (!HasLineOfSight(aimPoint, target.root))
+                return;
+
+            if (!IsBodyAlignedForFire(to))
                 return;
 
             if (Time.time < _nextFireTime)
@@ -102,12 +166,19 @@ namespace FpsDemo.Ai
 
         private Transform ResolveTarget()
         {
-            if (_target != null)
-                return _target;
+            if (_targetOverride != null)
+                return _targetOverride;
 
-            if (!string.IsNullOrEmpty(_targetTag))
+            if (_preferMatchParticipants)
             {
-                var go = GameObject.FindGameObjectWithTag(_targetTag);
+                var t = AiParticipantTarget.FindNearestAliveOther(transform, _selfParticipant);
+                if (t != null)
+                    return t;
+            }
+
+            if (!string.IsNullOrEmpty(_fallbackTargetTag))
+            {
+                var go = GameObject.FindGameObjectWithTag(_fallbackTargetTag);
                 if (go != null)
                     return go.transform;
             }
@@ -131,6 +202,33 @@ namespace FpsDemo.Ai
                 return true;
 
             return hit.collider.transform.root == targetRoot;
+        }
+
+        private void RotateBodyYawTowardWorldDirection(Vector3 worldToTarget)
+        {
+            Vector3 flat = worldToTarget;
+            flat.y = 0f;
+            if (flat.sqrMagnitude < 1e-6f)
+                return;
+
+            Quaternion targetRot = Quaternion.LookRotation(flat.normalized, Vector3.up);
+            _bodyFacing.rotation = Quaternion.RotateTowards(
+                _bodyFacing.rotation,
+                targetRot,
+                _bodyYawRotateSpeedDegrees * Time.deltaTime);
+        }
+
+        private bool IsBodyAlignedForFire(Vector3 worldToTarget)
+        {
+            Vector3 f = _bodyFacing.forward;
+            f.y = 0f;
+            Vector3 t = worldToTarget;
+            t.y = 0f;
+            if (f.sqrMagnitude < 1e-8f || t.sqrMagnitude < 1e-8f)
+                return true;
+
+            float angle = Vector3.Angle(f.normalized, t.normalized);
+            return angle <= _maxBodyFireAngleDegrees;
         }
     }
 }

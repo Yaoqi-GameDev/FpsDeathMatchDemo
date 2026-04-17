@@ -8,7 +8,8 @@ namespace FpsDemo.Fps
 {
     /// <summary>
     /// 玩家：死亡时灰幕、<see cref="FpsInput.GameplayInputEnabled"/> 关闭（仍可转视角）、关闭电机与武器；延迟后复活。
-    /// 复活位置<strong>推荐</strong>用场景里预放的 <see cref="_spawnPoints"/>（随机其一），与常见 FPS 一致；未配置时再走可选的矩形内随机 + 向下射线。
+    /// 仅 <see cref="MatchParticipant.IsLocalPlayer"/> 或（无 MatchParticipant 时标签为 Player）会走本流程，避免误挂本脚本的单位死亡时全屏遮罩。
+    /// 复活位置使用场景中的 <see cref="MatchSpawnPoints"/>；未配置时可选用一个 <see cref="_fallbackRespawnPoint"/>。
     /// </summary>
     [RequireComponent(typeof(Health))]
     [RequireComponent(typeof(CharacterController))]
@@ -25,20 +26,13 @@ namespace FpsDemo.Fps
         [Tooltip("Screen Space Overlay 半透明罩层；死亡时偏灰。")]
         [SerializeField] private Color _deathTint = new Color(0.22f, 0.22f, 0.25f, 0.62f);
 
-        [Header("复活位置（推荐）")]
-        [Tooltip("在场景里放若干空物体，贴地放在安全复活处；死亡时随机选一个。留空则使用下方「后备」。")]
-        [SerializeField] private Transform[] _spawnPoints;
-        [Tooltip("使用复活点时，是否把身体朝向对齐到该点的旋转（仅 Y），并把俯仰归零。")]
+        [Header("复活位置")]
+        [Tooltip("全局统一复活点（场景里一个 MatchSpawnPoints）。")]
+        [SerializeField] private MatchSpawnPoints _matchSpawnPoints;
+        [Tooltip("当 MatchSpawnPoints 未拖或列表为空时使用该点位置；可空则复活时留在原地并打警告。")]
+        [SerializeField] private Transform _fallbackRespawnPoint;
+        [Tooltip("使用复活点时，是否把身体朝向对齐到该点旋转（仅 Y），并把俯仰归零。")]
         [SerializeField] private bool _snapViewToSpawnYaw = true;
-
-        [Header("无复活点时的后备（可选）")]
-        [Tooltip("在水平矩形内随机 XZ，从上方向下射线找地；试几次后仍失败则用矩形中心高度附近。")]
-        [SerializeField] private Transform _fallbackAreaCenter;
-        [SerializeField] private Vector2 _fallbackHalfExtentsXZ = new Vector2(80f, 80f);
-        [SerializeField] private float _raycastDownFrom = 120f;
-        [SerializeField] private float _groundSnapYOffset = 0.08f;
-        [SerializeField] private int _fallbackMaxTries = 12;
-        [SerializeField] private LayerMask _groundMask;
 
         private Health _health;
         private CharacterController _controller;
@@ -59,9 +53,6 @@ namespace FpsDemo.Fps
                 _look = GetComponent<FpsPlayerLook>();
 
             _health.SetDestroyOnDeath(false);
-
-            if (_groundMask.value == 0)
-                _groundMask = Physics.DefaultRaycastLayers;
 
             BuildDeathOverlay();
         }
@@ -87,10 +78,23 @@ namespace FpsDemo.Fps
             if (_respawnRoutine != null)
                 return;
 
+            if (!IsLocalPlayerDeathFlow())
+                return;
+
             if (MatchManager.Instance != null && MatchManager.Instance.IsMatchOver)
                 return;
 
             _respawnRoutine = StartCoroutine(DeathAndRespawnRoutine());
+        }
+
+        /// <summary>
+        /// 全屏灰幕挂在独立 Canvas 上，会遮住整局画面。若假人/机器人误挂了本脚本，其死亡不应触发本地玩家的死亡 UI。
+        /// </summary>
+        private bool IsLocalPlayerDeathFlow()
+        {
+            if (TryGetComponent<MatchParticipant>(out var mp))
+                return mp.IsLocalPlayer;
+            return CompareTag("Player");
         }
 
         private IEnumerator DeathAndRespawnRoutine()
@@ -113,19 +117,19 @@ namespace FpsDemo.Fps
                 yield break;
             }
 
-            PickSpawnPosition(out Transform spawnTf, out Vector3 fallbackPos);
+            PickSpawnPosition(out Vector3 worldPos, out float? yawDegrees);
 
             _controller.enabled = false;
-            transform.position = spawnTf != null ? spawnTf.position : fallbackPos;
+            transform.position = worldPos;
 
-            if (spawnTf != null && _snapViewToSpawnYaw)
+            if (_snapViewToSpawnYaw && yawDegrees.HasValue)
             {
                 if (_look != null)
-                    _look.SnapToWorldYaw(spawnTf.eulerAngles.y);
+                    _look.SnapToWorldYaw(yawDegrees.Value);
                 else
                 {
                     Vector3 e = transform.eulerAngles;
-                    e.y = spawnTf.eulerAngles.y;
+                    e.y = yawDegrees.Value;
                     transform.eulerAngles = e;
                 }
             }
@@ -155,65 +159,32 @@ namespace FpsDemo.Fps
             _respawnRoutine = null;
         }
 
-        /// <summary>
-        /// 优先从 <see cref="_spawnPoints"/> 随机选一个；若未配置则 <paramref name="spawnTf"/> 为 null，<paramref name="fallbackPos"/> 为矩形内射线结果。
-        /// </summary>
-        private void PickSpawnPosition(out Transform spawnTf, out Vector3 fallbackPos)
+        private void PickSpawnPosition(out Vector3 worldPos, out float? yawDegrees)
         {
-            spawnTf = null;
-            fallbackPos = transform.position;
+            worldPos = transform.position;
+            yawDegrees = null;
 
-            if (_spawnPoints == null || _spawnPoints.Length == 0)
+            if (_matchSpawnPoints != null && _matchSpawnPoints.HasAnyValidPoint)
             {
-                fallbackPos = ResolveFallbackPosition();
-                return;
-            }
-
-            int valid = 0;
-            for (int i = 0; i < _spawnPoints.Length; i++)
-            {
-                if (_spawnPoints[i] != null)
-                    valid++;
-            }
-
-            if (valid == 0)
-            {
-                fallbackPos = ResolveFallbackPosition();
-                return;
-            }
-
-            int pick = Random.Range(0, valid);
-            for (int i = 0; i < _spawnPoints.Length; i++)
-            {
-                if (_spawnPoints[i] == null)
-                    continue;
-                if (pick == 0)
+                if (_matchSpawnPoints.TryPickSpawnPointForRespawn(gameObject, out Transform spawnTf) &&
+                    spawnTf != null)
                 {
-                    spawnTf = _spawnPoints[i];
+                    worldPos = spawnTf.position;
+                    yawDegrees = spawnTf.eulerAngles.y;
                     return;
                 }
-
-                pick--;
             }
 
-            fallbackPos = ResolveFallbackPosition();
-        }
-
-        private Vector3 ResolveFallbackPosition()
-        {
-            Vector3 center = _fallbackAreaCenter != null ? _fallbackAreaCenter.position : transform.position;
-
-            for (int i = 0; i < _fallbackMaxTries; i++)
+            if (_fallbackRespawnPoint != null)
             {
-                float x = Random.Range(center.x - _fallbackHalfExtentsXZ.x, center.x + _fallbackHalfExtentsXZ.x);
-                float z = Random.Range(center.z - _fallbackHalfExtentsXZ.y, center.z + _fallbackHalfExtentsXZ.y);
-                Vector3 origin = new Vector3(x, center.y + _raycastDownFrom, z);
-                if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, _raycastDownFrom + 400f, _groundMask, QueryTriggerInteraction.Ignore))
-                    return hit.point + Vector3.up * _groundSnapYOffset;
+                worldPos = _fallbackRespawnPoint.position;
+                yawDegrees = _fallbackRespawnPoint.eulerAngles.y;
+                return;
             }
 
-            Debug.LogWarning("PlayerDeathRespawn: 后备射线未命中地面，使用矩形中心上方一点；请在场景里添加 Spawn Points 或检查 Layer / 碰撞体。", this);
-            return new Vector3(center.x, center.y + 2f, center.z);
+            Debug.LogWarning(
+                "PlayerDeathRespawn: 未配置有效的 MatchSpawnPoints，且 Fallback Respawn Point 为空；复活位置未改变。请在场景中添加 MatchSpawnPoints 并拖入引用。",
+                this);
         }
 
         private void BuildDeathOverlay()

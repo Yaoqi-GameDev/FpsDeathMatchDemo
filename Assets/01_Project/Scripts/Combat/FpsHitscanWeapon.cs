@@ -29,6 +29,10 @@ namespace FpsDemo.Combat
         [Tooltip("未在 Inspector 勾选任何层时，使用 Physics.DefaultRaycastLayers（含 Player，便于命中角色；自伤由脚本按根物体跳过）。")]
         [SerializeField] private LayerMask _hitLayers;
 
+        [Header("伤害")]
+        [Tooltip("可选：部位倍率配置；未拖则使用内建默认（头 2 / 上身 1 / 四肢 0.7）。武器只填基础伤害。")]
+        [SerializeField] private BodyDamageMultiplierConfig _bodyDamageMultiplierConfig;
+
         [Header("动画 / 桥接（可选）")]
         [Tooltip("弹匣为 0 且本帧按下开火时触发 DryFire（与 ShotFired 互斥）；用于 FP 空枪动画等。")]
         [SerializeField] private bool _emitDryFireWhenEmpty = true;
@@ -244,6 +248,7 @@ namespace FpsDemo.Combat
                 _hitLayers,
                 transform,
                 Current.DamagePerShot,
+                _bodyDamageMultiplierConfig,
                 out bool hitDamageable,
                 out ShotHitInfo shotInfo);
 

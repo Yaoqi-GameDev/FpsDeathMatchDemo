@@ -1,4 +1,5 @@
 using System;
+using FpsDemo.Data;
 using UnityEngine;
 
 namespace FpsDemo.Combat
@@ -18,6 +19,7 @@ namespace FpsDemo.Combat
             LayerMask hitLayers,
             Transform instigatorWeaponTransform,
             float damagePerShot,
+            BodyDamageMultiplierConfig bodyDamageConfig,
             out bool hitDamageable,
             out ShotHitInfo shotInfo)
         {
@@ -26,7 +28,8 @@ namespace FpsDemo.Combat
                 ?? instigatorWeaponTransform.GetComponentInParent<Health>(true);
             GameObject instigator = sourceHealth != null ? sourceHealth.gameObject : instigatorWeaponTransform.gameObject;
 
-            RaycastHit[] hits = Physics.RaycastAll(ray, maxRange, hitLayers, QueryTriggerInteraction.Ignore);
+            // 角色 Hitbox 多为 Is Trigger；Ignore 会完全跳过 Trigger，导致打不中。
+            RaycastHit[] hits = Physics.RaycastAll(ray, maxRange, hitLayers, QueryTriggerInteraction.Collide);
             if (hits.Length > 1)
                 Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
@@ -40,9 +43,15 @@ namespace FpsDemo.Combat
                     if (IsSameShooterAndTarget(damageable, sourceHealth))
                         continue;
 
+                    var hitbox = h.collider.GetComponent<HitboxBodyRegion>()
+                        ?? h.collider.GetComponentInParent<HitboxBodyRegion>();
+                    DamageBodyRegion region = hitbox != null ? hitbox.Region : DamageBodyRegion.Unknown;
+                    float mult = BodyDamageMultiplierConfig.ResolveMultiplier(region, bodyDamageConfig);
+                    float finalDamage = damagePerShot * mult;
+
                     hitDamageable = true;
-                    damageable.ApplyDamage(damagePerShot, instigator);
-                    shotInfo = new ShotHitInfo(true, h.point, h.normal, true, h.collider);
+                    damageable.ApplyDamage(finalDamage, instigator);
+                    shotInfo = new ShotHitInfo(true, h.point, h.normal, true, h.collider, region, mult, damagePerShot, finalDamage);
                     return;
                 }
 

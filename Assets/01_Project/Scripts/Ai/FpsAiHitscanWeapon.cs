@@ -19,6 +19,10 @@ namespace FpsDemo.Ai
         [Tooltip("未勾选时使用 Physics.DefaultRaycastLayers。")]
         [SerializeField] private LayerMask _hitLayers;
 
+        [Header("伤害")]
+        [Tooltip("可选：部位倍率配置；未拖则使用内建默认（头 2 / 上身 1 / 四肢 0.7）。")]
+        [SerializeField] private BodyDamageMultiplierConfig _bodyDamageMultiplierConfig;
+
         /// <summary>成功扣弹并发射一次（射线已执行）。</summary>
         public event Action ShotFired;
 
@@ -34,6 +38,17 @@ namespace FpsDemo.Ai
         public int AmmoInMagazine => _magazine;
         public int ReserveAmmo => _reserve;
         public bool IsReloading => _reloading;
+
+        /// <summary>弹匣/备弹与换弹状态恢复为 <see cref="HitscanWeaponConfig"/> 开局值；测试假人复活等可调用。</summary>
+        public void RestoreStartingAmmo()
+        {
+            if (_config == null)
+                return;
+
+            _reloading = false;
+            _magazine = _config.MagazineSize;
+            _reserve = Mathf.Max(0, _config.StartingReserveAmmo);
+        }
 
         private int _magazine;
         private int _reserve;
@@ -79,6 +94,7 @@ namespace FpsDemo.Ai
                 _hitLayers,
                 transform,
                 _config.DamagePerShot,
+                _bodyDamageMultiplierConfig,
                 out hitDamageable,
                 out shotInfo);
 
