@@ -110,7 +110,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 - **伤害**：`IDamageable` + **`Health`**（可受伤物体挂 Collider + `Health`，默认死亡 **`Destroy`**）。
 - **弹药 HUD**：`AmmoHub` 读武器公开属性写入 **TextMeshPro**；**`--UI--` → GamePlayCanvas → Canvas** 下与 **Crosshair** 并列；**Canvas Scaler** 建议 **Scale With Screen Size**；弹药 **RectTransform** 锚 **右下角** 以适配分辨率。
 - **准星命中**：`FpsCrosshairHitFeedback` 订阅 **`ShotHitDamageable`**（仅命中可受伤目标为 `true`）。
-- **音效**：**`FpsHitscanWeapon`** 发 C# 事件 **`ShotFired`** / **`ReloadStarted`**（无音频引用）；**`FpsWeaponAudioObserver`** 订阅并拖 **`AudioClip`**，经单例 **`AudioManager.PlayOneShot2D`** 播放。**命中（人/墙）**：**`FpsHitscanSurfaceAudioFeedback`** 订阅 **`ShotResolved`**，拖 **`_hitDamageableClip`** / **`_hitWorldClip`**（仅 Player；人机未挂）。
+- **音效**：**`FpsHitscanWeapon`** 发 C# 事件 **`ShotFired`** / **`ReloadStarted`**（无音频引用）；**`FpsWeaponAudioObserver`** 订阅并拖 **`AudioClip`**，经单例 **`AudioManager.PlayOneShot2D`** 播放。**人机（世界空间枪声）**：同物体挂 **`AudioSource`**（**Spatial Blend = 1**）+ **`FpsAiWeaponSpatialAudio`**，拖 **`FpsAiHitscanWeapon`**、**`AudioClip`**（开火/换弹可选），在音源上 **`PlayOneShot`**，不走路由 **`AudioManager`** 2D。**命中（人/墙）**：**`FpsHitscanSurfaceAudioFeedback`** 订阅 **`ShotResolved`**，拖 **`_hitDamageableClip`** / **`_hitWorldClip`**（仅 Player；人机命中音未接）。
 
 ### 近期计划（未实现）
 
