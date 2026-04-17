@@ -23,6 +23,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 | 战斗射线 | **Hitscan**；`Physics.RaycastAll`，**`QueryTriggerInteraction.Collide`**，角色 **Hitbox 可用 Is Trigger** |
 | 部位伤害 | 武器只填 **基础伤害**（`HitscanWeaponConfig`）；最终伤害 = 基础 × **部位倍率**。Hitbox 挂 **`HitboxBodyRegion`**（头 / 上身 / 四肢）；倍率可选 **`BodyDamageMultiplierConfig`**（菜单 *Create → FpsDemo → Data → Body Damage Multiplier Config*），未拖则用内建 **头 2 / 上身 1 / 四肢 0.7** |
 | Layer | 角色可在 **Player** 层；武器射线默认 **包含** Player，**自伤**由脚本按 **根物体** 跳过；环境/靶子常用 **Default** 等 |
+| 统一复活点 | 场景里<strong>一个</strong> **`MatchSpawnPoints`**（随机 + 共用冷却 + XZ 近身避让存活参赛者）；**`PlayerDeathRespawn`** / **`FpsTestDummyEnemy`** 拖同一引用。参战单位宜同挂 **`MatchParticipant`** 以便近身判定。玩家还可选 **`Fallback Respawn Point`**；假人无全局点时仍可用圆内随机 |
 
 ---
 
@@ -115,7 +116,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 - **玩法闭环**：**参战者 + 局内规则**（**`MatchParticipant`** / **`MatchManager`**）已实现；待接 **HUD**、**玩家血量与区域复活**、正式结算美术。
 - **打击与可读性**：命中/受击 **VFX 或贴花**（可订阅 **`ShotResolved`** / 武器已有事件）；受击音效仍走 **`AudioManager`** 与观察者模式。
-- **关卡与复活**：**`PlayerDeathRespawn`** 推荐在场景里拖多个 **`Spawn Points`**（空物体贴地），死亡时**随机其一**（与常见 FPS 一致）；未配置时用 **`Fallback Area Center`** + **半宽 XZ** + 少量向下射线。
+- **关卡与复活**：**`PlayerDeathRespawn`** 拖 **`MatchSpawnPoints`**（随机其一）；可选单点 **`Fallback Respawn Point`**；两者皆无时会在控制台警告且**不移动**。
 - **输入**：原型稳定后迁移 **新 Input System**、自定义键位。
 - **网络**：单机循环与规则清晰后再接（与 README「第一阶段不考虑网络」一致）。
 
@@ -223,7 +224,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 | 2026-04-08 | **`MatchParticipant`** + **`MatchManager`**（`CombatKillBus` 记分、倒计时、目标击杀、结算占位） |
 | 2026-04-08 | **`DeathmatchHudView`**：时间、排行、击杀条（5 条）、左下血量（需 **`Health`**） |
 | 2026-04-08 | 移除 Editor **DeathmatchHudBuilder**（HUD 已落场景后不再需要一键生成） |
-| 2026-04-08 | **`PlayerDeathRespawn`**：死亡灰幕、禁玩法输入；复活以 **`Spawn Points`** 为主、**`Fallback`** 矩形射线为辅；**`FpsPlayerMotor.ResetStateForRespawn`**；**`FpsInput.GameplayInputEnabled`** |
+| 2026-04-08 | **`PlayerDeathRespawn`**：死亡灰幕、禁玩法输入；复活以 **`MatchSpawnPoints`**（可选 **`Fallback Respawn Point`**）；**`FpsPlayerMotor.ResetStateForRespawn`**；**`FpsInput.GameplayInputEnabled`** |
 
 ---
 
@@ -318,7 +319,7 @@ CombatKillBus.KillCommitted(KillReport)
 
 ## 脚本说明
 
-- `Assets/01_Project/Scripts/Fps/`：`FpsInput`、`FpsPlayerLook`、`FpsLadder`、**`FpsRecoilController`**（后座，一般挂 **Main Camera**）、**`FpsAdsWorldFov`**（主相机开镜 **FOV**）、**`FpsThirdPersonLocomotionAnimator`**（第三人称 **speed**）、**`FpsWeaponViewModelAnimator`**（订阅 **`FpsHitscanWeapon`**，内含 Layer/状态 **`CrossFade`**）、**`PlayerDeathRespawn`**（死亡灰幕、禁玩法输入、仅保留视角、区域内随机复活）
+- `Assets/01_Project/Scripts/Fps/`：`FpsInput`、`FpsPlayerLook`、`FpsLadder`、**`FpsRecoilController`**（后座，一般挂 **Main Camera**）、**`FpsAdsWorldFov`**（主相机开镜 **FOV**）、**`FpsThirdPersonLocomotionAnimator`**（第三人称 **speed**）、**`FpsWeaponViewModelAnimator`**（订阅 **`FpsHitscanWeapon`**，内含 Layer/状态 **`CrossFade`**）、**`PlayerDeathRespawn`**（死亡灰幕、禁玩法输入；**`MatchSpawnPoints`** 随机复活）
 - `Assets/01_Project/Scripts/Data/`：**`HitscanWeaponConfig`**（ScriptableObject 模板，与 `Assets/01_Project/Data/Weapons/` 下 `.asset` 对应）
 - `Assets/01_Project/Scripts/Combat/`：`IDamageable`（**`ApplyDamage` 两则重载**）、**`KillReport`**、**`CombatKillBus`**、`Health`、`ShotHitInfo`、**`HitscanShotResolver`**、**`FpsHitscanWeapon`**、**`FpsTestDummyEnemy`**（测试：需同挂 **`Health`**，游荡 + 随机复活）
 - `Assets/01_Project/Data/Weapons/`：**`Hitscan_Rifle_Standard`**、**`Hitscan_Pistol_Standard`** 等（**`Create → FpsDemo → Data → Hitscan Weapon Config`** 可再建）
@@ -338,7 +339,7 @@ CombatKillBus.KillCommitted(KillReport)
 | `FpsPlayerMotor` | `CharacterController`：走跑蹲跳、**滑铲**、**梯子**、连跳惩罚、蹲/滑铲/站立时胶囊与相机高度 |
 | `FpsLadder` | 挂在梯子物体上（**Trigger 碰撞体**），玩家进入范围后由电机处理 **F** 攀爬 |
 | `Health` | 可受伤物体：实现 **`IDamageable`**（单参转调两参）；致死发布 **`CombatKillBus`** 与 **`Died`**；**`ReviveFull` / `SetDestroyOnDeath`**；玩家复活流需 **关闭死亡 `Destroy`** |
-| `PlayerDeathRespawn` | 与 **`Health`** 同挂 **`Player`**：订阅 **`Died`**；**`GameplayInputEnabled=false`**；**`Spawn Points`** 随机复活点（推荐）；无则 **`Fallback`** 矩形内射线；**`FpsPlayerLook.SnapToWorldYaw`** 可选对齐朝向；**`Ground Mask`** 用于后备射线 |
+| `PlayerDeathRespawn` | 与 **`Health`** 同挂 **`Player`**：仅 **`MatchParticipant.IsLocalPlayer`**（无则 **`Player` 标签**）才走全屏灰幕与复活；**勿**挂在假人上。订阅 **`Died`**；**`MatchSpawnPoints`**；可选 **`Fallback Respawn Point`**；**`Snap View To Spawn`** |
 | `AudioManager` | 单例：拖 **`AudioSource`**（2D）；**`PlayOneShot2D`**；**不在此脚本上 DDOL** |
 | `DontDestroyThisRoot`（`Core`） | 挂在**场景根**（如 **`--DDOL--`**），`Awake` 里 **`DontDestroyOnLoad`** 本物体；与音频无关 |
 | `FpsWeaponAudioObserver` | 订阅 **`FpsHitscanWeapon.ShotFired` / `ReloadStarted`**，拖 **Clip**，调 **`AudioManager`** |
@@ -352,7 +353,7 @@ CombatKillBus.KillCommitted(KillReport)
 | `AmmoHub` | 弹药 HUD：拖 **`FpsHitscanWeapon`**、**TMP_Text**；可改 **`_format`** 字符串 |
 | `IDamageable` | **`ApplyDamage(float)`** 与 **`ApplyDamage(float, GameObject)`** 两则重载；不关心来源时第二则转调第一则 |
 | `CombatKillBus` | 静态 **`KillCommitted(KillReport)`**，致死时由 **`Health`** 发布 |
-| `FpsTestDummyEnemy` | **测试用**：**`[RequireComponent(Health)]`**；游荡、**`CapsuleCast`**、区域内复活；死亡表现订阅 **`Health.Died`** |
+| `FpsTestDummyEnemy` | **测试用**：**`[RequireComponent(Health)]`**；**`MatchSpawnPoints`** 开局/复活均在随机点，游荡圆心随落点更新，**复活后延迟一拍**再游荡（半径内置）；无全局点时圆内后备复活；**`CapsuleCast`**；订阅 **`Health.Died`** |
 | `FpsAiHitscanWeapon`（`Ai/`） | 人机专用：拖 **`HitscanWeaponConfig`**、**`LayerMask`**；与 **`FpsHitscanWeapon`** 共用 **`HitscanShotResolver`** |
 | `FpsAiHitscanShooter`（`Ai/`） | 单机 AI：拖 **`FpsAiHitscanWeapon`**、**`Aim Origin`**、**`Target`** 或 **`Player` Tag** |
 | `MatchParticipant` | 参战者身份与显示名；进 **`MatchManager`** 记分表 |
