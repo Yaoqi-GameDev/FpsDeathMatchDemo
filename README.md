@@ -107,9 +107,10 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 ### 第三阶段（战斗与 HUD，已实现）
 
 - **Hitscan 武器**：数值在 **`HitscanWeaponConfig`**（ScriptableObject；示例 **`Hitscan_Rifle_Standard`**、**`Hitscan_Pistol_Standard`**）；`FpsHitscanWeapon` 拖 **`_configs`**（多份 = 多槽位），**`1` / `2`** 切槽，**每槽独立弹药**；可选 **`_weaponVisualRoots`** 与槽位下标对齐，切枪 **SetActive** 模型。从 **MainCamera** 射线；**`LayerMask`** 未勾选时用 **`Physics.DefaultRaycastLayers`**（含 Player），**`RaycastAll`** 由近到远解析，**同一根物体**不扣血。**弹匣 / 备弹 / 换弹**；连发射速可配。
-- **伤害**：`IDamageable` + **`Health`**（可受伤物体挂 Collider + `Health`，默认死亡 **`Destroy`**）。
+- **伤害**：`IDamageable` + **`Health`**（每次扣血 **`Damaged`**；致命时 **`Died`** + **`CombatKillBus`**）。可受伤物体挂 Collider + `Health`，默认死亡 **`Destroy`**）。
 - **弹药 HUD**：`AmmoHub` 读武器公开属性写入 **TextMeshPro**；**`--UI--` → GamePlayCanvas → Canvas** 下与 **Crosshair** 并列；**Canvas Scaler** 建议 **Scale With Screen Size**；弹药 **RectTransform** 锚 **右下角** 以适配分辨率。
 - **准星命中**：`FpsCrosshairHitFeedback` 订阅 **`ShotHitDamageable`**（仅命中可受伤目标为 `true`）。
+- **本地受击全屏红闪**：**`FpsPlayerHurtOverlayFeedback`** 挂在**全屏拉伸**的 **`Image`** 上（**Raycast Target** 关）；**Player Health** 可空（运行时解析本地 **`MatchParticipant`**）；**Canvas Sort Order** 建议低于 **`PlayerDeathRespawn`** 的死亡灰幕。
 - **音效**：**`FpsHitscanWeapon`** 发 C# 事件 **`ShotFired`** / **`ReloadStarted`**（无音频引用）；**`FpsWeaponAudioObserver`** 订阅并拖 **`AudioClip`**，经单例 **`AudioManager.PlayOneShot2D`** 播放。**人机（世界空间枪声）**：同物体挂 **`AudioSource`**（**Spatial Blend = 1**）+ **`FpsAiWeaponSpatialAudio`**，拖 **`FpsAiHitscanWeapon`**、**`AudioClip`**（开火/换弹可选），在音源上 **`PlayOneShot`**，不走路由 **`AudioManager`** 2D。**命中（人/墙）**：**`FpsHitscanSurfaceAudioFeedback`** 订阅 **`ShotResolved`**，拖 **`_hitDamageableClip`** / **`_hitWorldClip`**（仅 Player；人机命中音未接）。
 
 ### 近期计划（未实现）
@@ -266,9 +267,9 @@ FpsCrosshairHitFeedback（ShotHitDamageable）→ Image.color
 | 组件 | 做什么 |
 |------|--------|
 | **`FpsHitscanWeapon`** | 射线命中后对 **`IDamageable`** 调用 **`ApplyDamage(伤害, 伤害来源)`**。伤害来源为**武器所在物体**（`DeathMatch` 中为 **`Player` 根**）。 |
-| **`Health`** | 唯一扣血与死亡判定；实现 **`IDamageable`**（两则重载）；致死时构造 **`KillReport(Victim, Killer)`**，发布 **`CombatKillBus.KillCommitted`**，再触发实例 **`Died`**；可选 **`Destroy`**。 |
+| **`Health`** | 唯一扣血与死亡判定；实现 **`IDamageable`**（两则重载）；每次扣血后触发 **`Damaged(本次伤害, instigator)`**（含致死一击，先于 **`Died`**）；致死时再构造 **`KillReport`**，发布 **`CombatKillBus.KillCommitted`** 与 **`Died`**；可选 **`Destroy`**。 |
 | **`CombatKillBus`** | 静态 **`KillCommitted`**：局内规则、击杀播报、排行榜等**只订阅此处**，不遍历场景找 `Health`。 |
-| **`FpsTestDummyEnemy`** | **不**再实现受伤接口；**必须**同物体有 **`Health`**；只处理**游荡、死亡隐藏、区域内复活**，复活时调用 **`Health.ReviveFull()`**。 |
+| **`FpsTestDummyEnemy`** | **不**再实现受伤接口；**必须**同物体有 **`Health`**；只处理**游荡、死亡隐藏、区域内复活**，复活时调用 **`Health.ReviveFull()`**；若同物体有 **`FpsAiHitscanWeapon`**，再调用 **`RestoreStartingAmmo()`** 以免弹尽后无法开火。 |
 
 **数据流（一发子弹打死目标）**
 
@@ -350,6 +351,7 @@ CombatKillBus.KillCommitted(KillReport)
 | `FpsWeaponViewModelAnimator` | 与 **`FpsHitscanWeapon` 同物体**：拖 **`FpsInput`**、**`FpsPlayerMotor`**（空则同物体 **`GetComponent`**）；**`Running`** ← **`ShouldDriveArmsSprintRunningPose`**；**`FireHeld` / `AimHeld`** 时关 **`Running`**；**`Aim` / `Aiming`** 同步 Infima 手臂与武器 **`Aiming`**；**`WeaponViewModelAnimRouting`**；切槽 **`RuntimeAnimatorController`** |
 | `ShotHitInfo` | **readonly struct**：命中点、法线、是否可受伤等；**`ShotResolved`** 载荷 |
 | `FpsCrosshairHitFeedback` | 准星：拖 **`Image`**、**`FpsHitscanWeapon`**；订阅 **`ShotHitDamageable`** |
+| `FpsPlayerHurtOverlayFeedback` | **本地玩家**受伤：拖 **`Image`**、可选 **`Health`**；订阅 **`Health.Damaged`**，**`Peak` / `Fade`** 可调 |
 | `AmmoHub` | 弹药 HUD：拖 **`FpsHitscanWeapon`**、**TMP_Text**；可改 **`_format`** 字符串 |
 | `IDamageable` | **`ApplyDamage(float)`** 与 **`ApplyDamage(float, GameObject)`** 两则重载；不关心来源时第二则转调第一则 |
 | `CombatKillBus` | 静态 **`KillCommitted(KillReport)`**，致死时由 **`Health`** 发布 |

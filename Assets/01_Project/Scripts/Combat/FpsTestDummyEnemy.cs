@@ -1,4 +1,5 @@
 using System.Collections;
+using FpsDemo.Ai;
 using FpsDemo.Match;
 using UnityEngine;
 using UnityEngine.AI;
@@ -125,6 +126,11 @@ namespace FpsDemo.Combat
             WarpNavMeshIfNeeded();
 
             _health.ReviveFull();
+
+            var aiWeapon = GetComponent<FpsAiHitscanWeapon>();
+            if (aiWeapon != null)
+                aiWeapon.RestoreStartingAmmo();
+
             _hiddenForDeath = false;
             if (_collider != null)
                 _collider.enabled = true;

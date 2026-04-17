@@ -39,6 +39,17 @@ namespace FpsDemo.Ai
         public int ReserveAmmo => _reserve;
         public bool IsReloading => _reloading;
 
+        /// <summary>弹匣/备弹与换弹状态恢复为 <see cref="HitscanWeaponConfig"/> 开局值；测试假人复活等可调用。</summary>
+        public void RestoreStartingAmmo()
+        {
+            if (_config == null)
+                return;
+
+            _reloading = false;
+            _magazine = _config.MagazineSize;
+            _reserve = Mathf.Max(0, _config.StartingReserveAmmo);
+        }
+
         private int _magazine;
         private int _reserve;
         private bool _reloading;

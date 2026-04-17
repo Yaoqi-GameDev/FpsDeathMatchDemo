@@ -5,7 +5,7 @@ namespace FpsDemo.Combat
 {
     /// <summary>
     /// 生命值：挂在带 <see cref="Collider"/> 的物体上；射线命中后由 <see cref="FpsHitscanWeapon"/> 调用
-    /// <see cref="IDamageable"/>。致死时发布 <see cref="Died"/> 与 <see cref="CombatKillBus"/>。
+    /// <see cref="IDamageable"/>。每次扣血触发 <see cref="Damaged"/>；致死时再发布 <see cref="Died"/> 与 <see cref="CombatKillBus"/>。
     /// </summary>
     public sealed class Health : MonoBehaviour, IDamageable
     {
@@ -14,6 +14,12 @@ namespace FpsDemo.Combat
 
         /// <summary>本物体死亡时触发（先于 <see cref="Destroy"/>）；订阅者勿阻塞主线程。</summary>
         public event Action<KillReport> Died;
+
+        /// <summary>
+        /// 每次成功扣血后触发（含致死一击）；参数为本次伤害量、来源（可为 <c>null</c>）。
+        /// 在 <see cref="Died"/> 之前触发；仅本地表现（受击 UI/音效等）可订阅，勿阻塞主线程。
+        /// </summary>
+        public event Action<float, GameObject> Damaged;
 
         public float Current { get; private set; }
         public float Max => _maxHealth;
@@ -35,6 +41,8 @@ namespace FpsDemo.Combat
                 return;
 
             Current -= amount;
+            Damaged?.Invoke(amount, instigator);
+
             if (Current > 0f)
                 return;
 
