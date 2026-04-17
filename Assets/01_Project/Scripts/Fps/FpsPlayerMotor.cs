@@ -23,6 +23,10 @@ namespace FpsDemo.Fps
         [Header("走路 / 疾跑")]
         [SerializeField] private float _walkSpeed = 4.5f;
         [SerializeField] private float _sprintSpeed = 8f;
+        [Tooltip("开镜（AimHeld）时视为非疾跑：目标速度为走路，且不参与疾跑宽限/滑铲条件中的「疾跑」；第三人称 Animator 的 speed 会随实际水平速度落在走路区间。")]
+        [SerializeField] private bool _limitSpeedToWalkWhileAiming = true;
+        [Tooltip("按住开火（FireHeld）时同样视为非疾跑，与开镜限制一致。")]
+        [SerializeField] private bool _limitSpeedToWalkWhileFiring = true;
         [Tooltip("水平速度朝目标靠近的速率（加速与减速同一参数）。")]
         [SerializeField] private float _acceleration = 50f;
 
@@ -155,7 +159,8 @@ namespace FpsDemo.Fps
         }
 
         /// <summary>
-        /// 供手臂 Animator（如 Infima <c>Running</c>）：仅当贴地、正常移动（非滑铲/爬梯）、按住疾跑且 WASD 有移动输入时为真。
+        /// 供手臂 Animator（如 Infima <c>Running</c>）：仅当贴地、正常移动（非滑铲/爬梯）、按住疾跑且 WASD 有移动输入时为真；
+        /// 开镜 / 开火且勾选对应走路速限制时为假（与移动速度一致）。
         /// </summary>
         public bool ShouldDriveArmsSprintRunningPose
         {
@@ -168,6 +173,10 @@ namespace FpsDemo.Fps
                 if (!_controller.isGrounded)
                     return false;
                 if (!_input.SprintHeld)
+                    return false;
+                if (_limitSpeedToWalkWhileAiming && _input.AimHeld)
+                    return false;
+                if (_limitSpeedToWalkWhileFiring && _input.FireHeld)
                     return false;
                 return _input.MoveAxes.sqrMagnitude > 0.0001f;
             }
@@ -191,7 +200,9 @@ namespace FpsDemo.Fps
             }
 
             Vector2 axes = _input.MoveAxes;
-            bool sprinting = _input.SprintHeld;
+            bool sprinting = _input.SprintHeld
+                && (!_limitSpeedToWalkWhileAiming || !_input.AimHeld)
+                && (!_limitSpeedToWalkWhileFiring || !_input.FireHeld);
 
             if (sprinting)
                 _sprintGraceTimer = _sprintSlideGraceSeconds;

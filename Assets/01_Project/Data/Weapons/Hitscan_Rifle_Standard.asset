@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a4c2e1f9b7d5c3a6e8f0b2d4d6c8a1e, type: 3}
   m_Name: Hitscan_Rifle_Standard
   m_EditorClassIdentifier: 
-  _damagePerShot: 20
+  _damagePerShot: 25
   _fireRatePerSecond: 10
-  _magazineSize: 30
-  _startingReserveAmmo: 90
+  _magazineSize: 35
+  _startingReserveAmmo: 150
   _reloadDurationSeconds: 1.6
   _maxRange: 100
   _recoilVerticalPerShot: 2

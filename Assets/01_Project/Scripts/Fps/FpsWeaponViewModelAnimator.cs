@@ -6,7 +6,7 @@ namespace FpsDemo.Fps
     /// <summary>
     /// 第一人称武器「中间人」：订阅 <see cref="FpsHitscanWeapon"/> 的事件，把事件翻译成
     /// 手臂 / 武器模型上 <see cref="Animator"/> 的 Layer + 状态播放。
-    /// 疾跑时同步 <c>Running</c>（<see cref="FpsPlayerMotor.ShouldDriveArmsSprintRunningPose"/>）；按住开火或瞄准时关 <c>Running</c>（仅手臂姿势）。
+    /// 疾跑时同步 <c>Running</c>（<see cref="FpsPlayerMotor.ShouldDriveArmsSprintRunningPose"/>）；按住开火、瞄准或<strong>换弹中</strong>时关 <c>Running</c>（仅手臂姿势）。
     /// 瞄准时同步 Infima <c>Aim</c>（Bool）与 <c>Aiming</c>（Float）；<c>Aiming</c> 默认脚本插值，避免每帧 0/1 硬切。
     /// </summary>
     [DefaultExecutionOrder(-38)]
@@ -38,6 +38,8 @@ namespace FpsDemo.Fps
         [SerializeField] private bool _syncSprintToArmsRunning = true;
         [Tooltip("按住开火时关闭 Running，仅影响手臂姿势；不修改角色移动速度")]
         [SerializeField] private bool _clearRunningWhileFireHeld = true;
+        [Tooltip("换弹进行中关闭 Running，避免疾跑持枪与换弹上半身融合；仅手臂姿势。")]
+        [SerializeField] private bool _clearRunningWhileReloading = true;
         [SerializeField] private string _runningParameterName = "Running";
 
         [Header("瞄准（Infima 手臂：Aim Bool + Aiming Float；武器：Aiming Float）")]
@@ -83,6 +85,8 @@ namespace FpsDemo.Fps
             if (_clearRunningWhileFireHeld && _input.FireHeld)
                 running = false;
             if (_syncAimToAnimator && _clearRunningWhileAiming && _input.AimHeld)
+                running = false;
+            if (_clearRunningWhileReloading && _weapon != null && _weapon.IsReloading)
                 running = false;
 
             if (_syncSprintToArmsRunning)

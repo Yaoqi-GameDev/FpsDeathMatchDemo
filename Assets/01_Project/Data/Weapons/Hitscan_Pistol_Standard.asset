@@ -16,8 +16,8 @@ MonoBehaviour:
   _fireRatePerSecond: 6
   _magazineSize: 12
   _startingReserveAmmo: 36
-  _reloadDurationSeconds: 1.2
+  _reloadDurationSeconds: 1.4
   _maxRange: 80
   _recoilVerticalPerShot: 4
   _recoilYawRandomHalf: 0.16
-  _recoilRecoveryDegreesPerSecond: 10
+  _recoilRecoveryDegreesPerSecond: 11
