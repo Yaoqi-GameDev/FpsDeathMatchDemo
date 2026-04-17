@@ -1,5 +1,7 @@
 using FpsDemo.Combat;
+using FpsDemo.Match;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace FpsDemo.Ai
 {
@@ -11,9 +13,16 @@ namespace FpsDemo.Ai
     {
         [SerializeField] private FpsAiHitscanWeapon _weapon;
         [SerializeField] private Transform _aimOrigin;
-        [Tooltip("空：用 Tag 查找；否则用该物体作为目标根（一般为 Player 根）。")]
-        [SerializeField] private Transform _target;
-        [SerializeField] private string _targetTag = "Player";
+
+        [Header("目标")]
+        [Tooltip("勾选：在 MatchParticipant.ActiveParticipants 中选最近存活单位（排除自身）；无可用时再走下方后备。")]
+        [SerializeField] private bool _preferMatchParticipants = true;
+        [Tooltip("优先：固定目标根（调试用）；非空时始终打该 Transform，不走参战者列表。")]
+        [FormerlySerializedAs("_target")]
+        [SerializeField] private Transform _targetOverride;
+        [Tooltip("后备：Tag 查找（仅当未用手动目标且参战者列表无可用目标时）。")]
+        [FormerlySerializedAs("_targetTag")]
+        [SerializeField] private string _fallbackTargetTag = "Player";
 
         [Header("转向")]
         [SerializeField] private float _rotateSpeedDegrees = 240f;
@@ -29,6 +38,8 @@ namespace FpsDemo.Ai
 
         [Header("自身")]
         [SerializeField] private Health _selfHealth;
+        [Tooltip("空则在同物体上取 MatchParticipant，用于排除自己。")]
+        [SerializeField] private MatchParticipant _selfParticipant;
 
         private float _nextFireTime;
 
@@ -42,6 +53,8 @@ namespace FpsDemo.Ai
 
             if (_selfHealth == null)
                 _selfHealth = GetComponent<Health>();
+            if (_selfParticipant == null)
+                _selfParticipant = GetComponent<MatchParticipant>();
 
             if (_lineOfSightMask.value == 0)
                 _lineOfSightMask = Physics.DefaultRaycastLayers;
@@ -102,12 +115,19 @@ namespace FpsDemo.Ai
 
         private Transform ResolveTarget()
         {
-            if (_target != null)
-                return _target;
+            if (_targetOverride != null)
+                return _targetOverride;
 
-            if (!string.IsNullOrEmpty(_targetTag))
+            if (_preferMatchParticipants)
             {
-                var go = GameObject.FindGameObjectWithTag(_targetTag);
+                var t = AiParticipantTarget.FindNearestAliveOther(transform, _selfParticipant);
+                if (t != null)
+                    return t;
+            }
+
+            if (!string.IsNullOrEmpty(_fallbackTargetTag))
+            {
+                var go = GameObject.FindGameObjectWithTag(_fallbackTargetTag);
                 if (go != null)
                     return go.transform;
             }
