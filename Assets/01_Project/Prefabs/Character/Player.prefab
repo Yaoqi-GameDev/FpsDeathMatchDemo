@@ -7516,6 +7516,7 @@ GameObject:
   - component: {fileID: 825363191305290681}
   - component: {fileID: 7852133511793914252}
   - component: {fileID: 3642341506482752814}
+  - component: {fileID: 4183280830158354914}
   m_Layer: 0
   m_Name: X Bot
   m_TagString: Untagged
@@ -7579,6 +7580,20 @@ MonoBehaviour:
   - m_Rig: {fileID: 4254504054855001208}
     m_Active: 1
   m_Effectors: []
+--- !u!114 &4183280830158354914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7499073545442584808}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TransitionStateInfoList: []
+  m_Animator: {fileID: 7852133511793914252}
 --- !u!1 &7519039537113821254
 GameObject:
   m_ObjectHideFlags: 0

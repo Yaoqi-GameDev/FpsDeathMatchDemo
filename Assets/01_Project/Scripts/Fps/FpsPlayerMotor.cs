@@ -116,6 +116,12 @@ namespace FpsDemo.Fps
         /// <summary>疾跑目标速度（与 Inspector 一致）。</summary>
         public float ConfigSprintSpeed => _sprintSpeed;
 
+        /// <summary>本帧 locomotion 输入中的开镜（与 <see cref="_lastFrame"/> 一致；联机服务端来自 <see cref="NetworkLocomotionBuffer"/> RPC）。</summary>
+        public bool LocomotionAimHeld => _lastFrame.AimHeld;
+
+        /// <summary>本帧 locomotion 输入中的蹲伏（与 <see cref="_lastFrame"/> 一致；联机服务端来自 RPC）。</summary>
+        public bool LocomotionCrouchHeld => _lastFrame.CrouchHeld;
+
         private void Awake()
         {
             _controller = GetComponent<CharacterController>();

@@ -1,10 +1,12 @@
+using Unity.Netcode;
 using UnityEngine;
 
 namespace FpsDemo.Fps
 {
     /// <summary>
-    /// 将 <see cref="FpsPlayerMotor"/> 的 <c>speed</c> / <c>IsGrounded</c> / <c>VerticalSpeed</c> 等写入 Animator；<c>IsCrouch</c>、<c>IsAiming</c> 与 <see cref="FpsInput"/> 一致。
+    /// 将 <see cref="FpsPlayerMotor"/> 的 <c>speed</c> / <c>IsGrounded</c> / <c>VerticalSpeed</c> 等写入 Animator；<c>IsCrouch</c>、<c>IsAiming</c> 与 Motor 本帧 locomotion 一致（联机服务端与 <see cref="FpsDemo.Netcode.NetworkLocomotionBuffer"/> RPC 同步，勿仅用 <see cref="FpsInput"/>）。
     /// 挂在 Player 根（与 <see cref="FpsPlayerMotor"/> 同物体）；<see cref="_thirdPersonRoot"/> 指向全身模型根（如 X Bot），避免误隐藏第一人称手臂。
+    /// 联机时仅服务端写入 Animator，客户端由 <see cref="Unity.Netcode.Components.NetworkAnimator"/> 同步，避免与远端表现争抢参数导致抽搐。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class FpsThirdPersonLocomotionAnimator : MonoBehaviour
@@ -88,6 +90,9 @@ namespace FpsDemo.Fps
             if (_thirdPersonAnimator == null || !_thirdPersonAnimator.isActiveAndEnabled)
                 return;
 
+            if (!ShouldApplyLocomotionToAnimator())
+                return;
+
             if (_motor == null || !GameplayAllowed())
             {
                 _thirdPersonAnimator.SetFloat(_speedHash, 0f);
@@ -104,10 +109,10 @@ namespace FpsDemo.Fps
             float horizontal = _motor.HorizontalSpeed;
             _thirdPersonAnimator.SetFloat(_speedHash, horizontal);
 
-            bool crouch = _input != null && _input.CrouchHeld;
+            bool crouch = _motor.LocomotionCrouchHeld;
             _thirdPersonAnimator.SetBool(_crouchHash, crouch);
 
-            bool aim = _input != null && _input.AimHeld;
+            bool aim = _motor.LocomotionAimHeld;
             _thirdPersonAnimator.SetBool(_aimingHash, aim);
 
             if (_syncJumpParameters)
@@ -119,6 +124,9 @@ namespace FpsDemo.Fps
 
         private void OnDisable()
         {
+            if (!ShouldApplyLocomotionToAnimator())
+                return;
+
             if (_thirdPersonAnimator != null)
             {
                 _thirdPersonAnimator.SetBool(_crouchHash, false);
@@ -134,6 +142,15 @@ namespace FpsDemo.Fps
         private bool GameplayAllowed()
         {
             return _input == null || _input.GameplayInputEnabled;
+        }
+
+        /// <summary>单机或未开连接：本地写 Animator；已联机：仅服务端写，客户端交给 NetworkAnimator。</summary>
+        private static bool ShouldApplyLocomotionToAnimator()
+        {
+            var nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening)
+                return true;
+            return nm.IsServer;
         }
 
         private void ApplyOwnerVisibility()
