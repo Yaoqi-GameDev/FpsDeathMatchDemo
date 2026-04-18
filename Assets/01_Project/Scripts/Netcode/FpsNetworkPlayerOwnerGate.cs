@@ -37,7 +37,10 @@ namespace FpsDemo.Netcode
                 look.enabled = owner;
 
             if (TryGetComponent<FpsPlayerMotor>(out var motor))
-                motor.enabled = owner;
+                motor.enabled = IsServer || owner;
+
+            if (TryGetComponent<CharacterController>(out var characterController))
+                characterController.enabled = IsServer;
 
             if (TryGetComponent<FpsHitscanWeapon>(out var weapon))
                 weapon.enabled = owner;

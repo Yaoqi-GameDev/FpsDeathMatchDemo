@@ -4,10 +4,10 @@ using UnityEngine;
 namespace FpsDemo.Fps
 {
     /// <summary>
-    /// 只负责：水平转身体、竖直转 CameraPivot、光标锁定。
-    /// 挂在「身体」物体上（与 CharacterController 同一物体即可）。
+    /// 竖直转 CameraPivot（俯仰）、光标锁定。水平转身体由 <see cref="FpsPlayerMotor"/> 根据 <see cref="PlayerLocomotionInput.YawDelta"/> 处理。
+    /// 执行顺序晚于 <see cref="FpsPlayerMotor"/>，保证本帧俯仰在电机之后应用。
     /// </summary>
-    [DefaultExecutionOrder(-50)]
+    [DefaultExecutionOrder(50)]
     public sealed class FpsPlayerLook : MonoBehaviour
     {
         [SerializeField] private FpsInput _input;
@@ -43,10 +43,7 @@ namespace FpsDemo.Fps
             if (matchOver)
                 return;
 
-            float yaw = _input.LookDelta.x;
             float pitchDelta = _input.LookDelta.y;
-
-            transform.Rotate(0f, yaw, 0f, Space.World);
 
             _pitch -= pitchDelta;
             _pitch = Mathf.Clamp(_pitch, _pitchMin, _pitchMax);

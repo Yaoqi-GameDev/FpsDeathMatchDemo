@@ -4338,6 +4338,9 @@ GameObject:
   - component: {fileID: 5469769560227101455}
   - component: {fileID: 2473223139048170276}
   - component: {fileID: 3380427788496602132}
+  - component: {fileID: 5201429945135145308}
+  - component: {fileID: 1491969300644685924}
+  - component: {fileID: 6395227652580447231}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -4444,7 +4447,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad7bd559c940cdf47b5549907be11654, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _input: {fileID: 180033420358068988}
+  _localLocomotionSource: {fileID: 5201429945135145308}
+  _networkBuffer: {fileID: 1491969300644685924}
   _cameraPivot: {fileID: 1730765580858809607}
   _walkSpeed: 4.5
   _sprintSpeed: 7
@@ -4798,6 +4802,45 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _ownerOnlyBehaviours: []
+--- !u!114 &5201429945135145308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4802439671925501617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a371dda565458f47bfd131efc2d40d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _input: {fileID: 180033420358068988}
+--- !u!114 &1491969300644685924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4802439671925501617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2097759ec89b2b1418db61dc61860f31, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &6395227652580447231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4802439671925501617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 215f13dc9fd238242a9811a1421916e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _localSource: {fileID: 0}
+  _buffer: {fileID: 0}
 --- !u!1 &4840732966057307524
 GameObject:
   m_ObjectHideFlags: 0

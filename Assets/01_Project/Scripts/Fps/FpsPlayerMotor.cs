@@ -1,13 +1,16 @@
+using FpsDemo.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace FpsDemo.Fps
 {
     /// <summary>
     /// 第一人称移动：走路、蹲、疾跑、滑铲、梯子、跳跃与连跳惩罚。
-    /// 蹲伏移速倍率仅贴地生效，空中不按蹲把水平目标速度压低。
-    /// 挂在与 <see cref="CharacterController"/> 同一物体上。
+    /// 输入只来自 <see cref="ILocomotionInputSource"/>（单机：<see cref="FpsInputLocomotionSource"/>；联机服务器：<see cref="NetworkLocomotionBuffer"/>）。
+    /// 水平转角由本组件在每帧开始施加 <see cref="PlayerLocomotionInput.YawDelta"/>（原 <see cref="FpsPlayerLook"/> 的身体 yaw 已迁入此处）。
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(FpsInputLocomotionSource))]
     public sealed class FpsPlayerMotor : MonoBehaviour
     {
         private enum MotorMode
@@ -17,7 +20,8 @@ namespace FpsDemo.Fps
             Ladder
         }
 
-        [SerializeField] private FpsInput _input;
+        [SerializeField] private FpsInputLocomotionSource _localLocomotionSource;
+        [SerializeField] private NetworkLocomotionBuffer _networkBuffer;
         [SerializeField] private Transform _cameraPivot;
 
         [Header("走路 / 疾跑")]
@@ -84,6 +88,8 @@ namespace FpsDemo.Fps
         /// <summary>松 Shift 后倒计时；按住 Shift 时重置为满。</summary>
         private float _sprintGraceTimer;
 
+        private PlayerLocomotionInput _lastFrame;
+
         /// <summary>当前水平速度大小（m/s，XZ），供第三人称全身 Animator 等与移动动画对齐。</summary>
         public float HorizontalSpeed
         {
@@ -113,6 +119,8 @@ namespace FpsDemo.Fps
         private void Awake()
         {
             _controller = GetComponent<CharacterController>();
+            if (_localLocomotionSource == null)
+                _localLocomotionSource = GetComponent<FpsInputLocomotionSource>();
         }
 
         private void Start()
@@ -122,24 +130,50 @@ namespace FpsDemo.Fps
 
         private void Update()
         {
-            if (_input == null)
+            var source = ResolveLocomotionSource();
+            if (source == null || !source.TryGetFrame(out var frame))
                 return;
+
+            _lastFrame = frame;
+
+            if (!ShouldSimulateMotorPhysics())
+                return;
+
+            transform.Rotate(0f, frame.YawDelta, 0f, Space.World);
 
             _slideCooldownLeft = Mathf.Max(0f, _slideCooldownLeft - Time.deltaTime);
 
             if (_mode == MotorMode.Sliding)
             {
-                UpdateSliding();
+                UpdateSliding(in frame);
                 return;
             }
 
             if (_mode == MotorMode.Ladder)
             {
-                UpdateLadder();
+                UpdateLadder(in frame);
                 return;
             }
 
-            UpdateNormal();
+            UpdateNormal(in frame);
+        }
+
+        /// <summary>仅服务器（含 Host）跑 <see cref="CharacterController"/>；Owner 客户端只更新 <see cref="_lastFrame"/> 供手臂动画等。</summary>
+        private bool ShouldSimulateMotorPhysics()
+        {
+            var no = GetComponent<NetworkObject>();
+            if (no == null || !no.IsSpawned)
+                return true;
+            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+        }
+
+        private ILocomotionInputSource ResolveLocomotionSource()
+        {
+            var netObj = GetComponent<NetworkObject>();
+            if (_networkBuffer != null && netObj != null && netObj.IsSpawned
+                && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+                return _networkBuffer;
+            return _localLocomotionSource;
         }
 
         /// <summary>由 <see cref="FpsLadder"/> 的触发器调用。</summary>
@@ -166,23 +200,23 @@ namespace FpsDemo.Fps
         {
             get
             {
-                if (_input == null || _controller == null)
+                if (_controller == null)
                     return false;
                 if (_mode != MotorMode.Normal)
                     return false;
-                if (!_controller.isGrounded)
+                if (ShouldSimulateMotorPhysics() && !_controller.isGrounded)
                     return false;
-                if (!_input.SprintHeld)
+                if (!_lastFrame.SprintHeld)
                     return false;
-                if (_limitSpeedToWalkWhileAiming && _input.AimHeld)
+                if (_limitSpeedToWalkWhileAiming && _lastFrame.AimHeld)
                     return false;
-                if (_limitSpeedToWalkWhileFiring && _input.FireHeld)
+                if (_limitSpeedToWalkWhileFiring && _lastFrame.FireHeld)
                     return false;
-                return _input.MoveAxes.sqrMagnitude > 0.0001f;
+                return _lastFrame.MoveAxes.sqrMagnitude > 0.0001f;
             }
         }
 
-        private void UpdateNormal()
+        private void UpdateNormal(in PlayerLocomotionInput input)
         {
             bool grounded = _controller.isGrounded;
             if (grounded && _velocity.y < 0f)
@@ -199,10 +233,10 @@ namespace FpsDemo.Fps
                 _groundedTimer = 0f;
             }
 
-            Vector2 axes = _input.MoveAxes;
-            bool sprinting = _input.SprintHeld
-                && (!_limitSpeedToWalkWhileAiming || !_input.AimHeld)
-                && (!_limitSpeedToWalkWhileFiring || !_input.FireHeld);
+            Vector2 axes = input.MoveAxes;
+            bool sprinting = input.SprintHeld
+                && (!_limitSpeedToWalkWhileAiming || !input.AimHeld)
+                && (!_limitSpeedToWalkWhileFiring || !input.FireHeld);
 
             if (sprinting)
                 _sprintGraceTimer = _sprintSlideGraceSeconds;
@@ -211,13 +245,13 @@ namespace FpsDemo.Fps
 
             bool slideEligible = sprinting || _sprintGraceTimer > 0f;
 
-            if (_ladderInRange != null && _input.InteractPressedThisFrame)
+            if (_ladderInRange != null && input.InteractPressedThisFrame)
             {
                 EnterLadder();
                 return;
             }
 
-            bool trySlide = _input.CrouchPressedThisFrame
+            bool trySlide = input.CrouchPressedThisFrame
                 && grounded
                 && _slideCooldownLeft <= 0f
                 && slideEligible;
@@ -228,7 +262,7 @@ namespace FpsDemo.Fps
                 return;
             }
 
-            bool crouch = _input.CrouchHeld && !slideEligible;
+            bool crouch = input.CrouchHeld && !slideEligible;
             ApplyCapsuleForNormal(crouch);
 
             float speed = sprinting ? _sprintSpeed : _walkSpeed;
@@ -246,7 +280,7 @@ namespace FpsDemo.Fps
             _velocity.x = horizontal.x;
             _velocity.z = horizontal.z;
 
-            if (_input.JumpPressedThisFrame && grounded)
+            if (input.JumpPressedThisFrame && grounded)
             {
                 float heightMul = Mathf.Pow(_jumpHeightDecayPerChain, _jumpChainIndex);
                 float forwardMul = Mathf.Pow(_jumpForwardDecayPerChain, _jumpChainIndex);
@@ -280,9 +314,9 @@ namespace FpsDemo.Fps
                 _velocity.y = -2f;
         }
 
-        private void UpdateSliding()
+        private void UpdateSliding(in PlayerLocomotionInput input)
         {
-            if (_input.JumpPressedThisFrame)
+            if (input.JumpPressedThisFrame)
             {
                 EndSlideEarly();
                 float horizSpeed = _slideSpeed * _slideJumpHorizontalMultiplier;
@@ -339,7 +373,7 @@ namespace FpsDemo.Fps
             }
         }
 
-        private void UpdateLadder()
+        private void UpdateLadder(in PlayerLocomotionInput input)
         {
             if (_activeLadder == null)
             {
@@ -348,24 +382,23 @@ namespace FpsDemo.Fps
                 return;
             }
 
-            if (_input.InteractPressedThisFrame)
+            if (input.InteractPressedThisFrame)
             {
                 ExitLadder(jumpOff: false);
                 return;
             }
 
-            if (_input.JumpPressedThisFrame)
+            if (input.JumpPressedThisFrame)
             {
                 ExitLadder(jumpOff: true);
                 _controller.Move(_velocity * Time.deltaTime);
                 return;
             }
 
-            Vector2 axes = _input.MoveAxes;
+            Vector2 axes = input.MoveAxes;
             Vector3 up = _activeLadder.WorldUp;
             Vector3 right = _activeLadder.WorldRight;
 
-            // W/S 沿梯 up；A/D 沿梯 right（微调）。朝向由玩家自己转相机/身体即可。
             Vector3 climb = up * (axes.y * _activeLadder.ClimbSpeed)
                 + right * (axes.x * _activeLadder.ClimbSpeed * _ladderStrafeMultiplier);
 
