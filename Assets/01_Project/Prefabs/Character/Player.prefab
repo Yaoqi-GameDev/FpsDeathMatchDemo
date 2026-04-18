@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 125909096517867213}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: bolt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -137,7 +137,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1911416883377859431}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SOCKET_Laser
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -200,7 +200,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 52677860384286894}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: P_LPSP_WEP_ATT_Muzzles
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -232,7 +232,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3680280654692593447}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SOCKET_Grip
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -296,7 +296,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8501976381732572326}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SKEL_AR_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -359,7 +359,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 65442857523233893}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SOCKET_Default
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -518,7 +518,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1820610466390854034}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SOCKET_Eject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1226,7 +1226,7 @@ GameObject:
   - component: {fileID: 7552323214189471438}
   - component: {fileID: 830426193961723618}
   - component: {fileID: 3383650673632731674}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SM_AR_01_Scope_Default
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3731,7 +3731,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8451737825768322180}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SOCKET_Muzzle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3857,7 +3857,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1233015606833416346}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SOCKET_Scope
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4021,7 +4021,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8513715628398348359}
   - component: {fileID: 2008394246693320556}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SM_AR_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4341,6 +4341,7 @@ GameObject:
   - component: {fileID: 5201429945135145308}
   - component: {fileID: 1491969300644685924}
   - component: {fileID: 6395227652580447231}
+  - component: {fileID: 213327089304857137}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -4719,7 +4720,7 @@ MonoBehaviour:
   _syncJumpParameters: 1
   _groundedParameterName: IsGrounded
   _verticalSpeedParameterName: VerticalSpeed
-  _hideMeshForOwner: 0
+  _hideMeshForOwner: 1
   _thirdPersonRenderers: []
 --- !u!114 &4838875226987746106
 MonoBehaviour:
@@ -4841,6 +4842,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _localSource: {fileID: 0}
   _buffer: {fileID: 0}
+--- !u!114 &213327089304857137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4802439671925501617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: defbb8763d829724b8b149341f7ed6c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _firstPersonVisualRoot: {fileID: 9209778550605745786}
+  _thirdPersonLocomotion: {fileID: 7854805742144285510}
+  _thirdPersonWeaponRoot: {fileID: 8362224347084643585}
 --- !u!1 &4840732966057307524
 GameObject:
   m_ObjectHideFlags: 0
@@ -5203,7 +5219,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8852673607993113521}
   - component: {fileID: 6770109013111845771}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: P_LPSP_WEP_AR_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5743,7 +5759,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6996008832661070905}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SOCKET_Magazine
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5942,7 +5958,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6208071835312654974}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SOCKET_Eject_C
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6483,7 +6499,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7769497413212104631}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: P_LPSP_WEP_ATT_Muzzle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7157,7 +7173,7 @@ GameObject:
   - component: {fileID: 642280795890731059}
   - component: {fileID: 4652354062593639537}
   - component: {fileID: 2352295467567317684}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SM_AR_01_Magazine_Default
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7907,7 +7923,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3201563393984430727}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: LeftHandTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8194,7 +8210,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1448483559387622696}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: SOCKET_Muzzle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8660,7 +8676,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4994603999482120879}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: root
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9108,7 +9124,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9043604797814235557}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: magazine
   m_TagString: Untagged
   m_Icon: {fileID: 0}

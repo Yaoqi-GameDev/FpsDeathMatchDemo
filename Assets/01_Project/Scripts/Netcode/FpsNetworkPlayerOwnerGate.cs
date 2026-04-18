@@ -48,9 +48,6 @@ namespace FpsDemo.Netcode
             foreach (var recoil in GetComponentsInChildren<FpsRecoilController>(true))
                 recoil.enabled = owner;
 
-            if (TryGetComponent<FpsThirdPersonLocomotionAnimator>(out var thirdPerson) && !owner)
-                thirdPerson.SetVisibleForRemoteCopy(true);
-
             if (_ownerOnlyBehaviours != null)
             {
                 foreach (var b in _ownerOnlyBehaviours)
