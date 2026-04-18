@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/01_Project/Scenes/DeathMatch.unity
+    guid: 46b81905543917345ba99583fb639519
   m_configObjects: {}

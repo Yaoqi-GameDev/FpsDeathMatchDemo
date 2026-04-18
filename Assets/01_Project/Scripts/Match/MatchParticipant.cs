@@ -23,6 +23,12 @@ namespace FpsDemo.Match
         public bool IsLocalPlayer => _isLocalPlayer;
         public GameObject Root => gameObject;
 
+        /// <summary>联机时由 <c>FpsNetworkPlayerOwnerGate</c> 在生成后调用：仅 Owner 为「本地玩家」（HUD / 复活灰幕等）。</summary>
+        public void SetLocalPlayerForNetworking(bool isLocalPlayer)
+        {
+            _isLocalPlayer = isLocalPlayer;
+        }
+
         private void OnEnable()
         {
             if (ParticipantId == 0)
