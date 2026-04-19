@@ -186,6 +186,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 | 2026-04-18 | **`MatchManager`**：`RegisterParticipant` / `UnregisterParticipant`；**`MatchParticipant`** 在 **`OnEnable`/`OnDisable`** 登记，联机晚生成的玩家也会进入 `_kills`，顶栏排行可记分 |
 | 2026-04-18 | **`PlayerMatchStatsNet`**（Player 根）：服务器 **`NetworkVariable<int>`** 同步击杀；**`MatchManager`** 击杀结算时 **`ServerNotifyKillScored`**；**`DeathmatchHudView`** 联机时从 **`SpawnManager.SpawnedObjects`** 拼排行（客户端击杀数与主机一致） |
 | 2026-04-18 | **`PlayerRespawnNetBridge`**：服务器 **`MatchSpawnPoints`** 随机出生/复活传送 + **`NetworkHealthBridge.ServerReviveAndSyncNetworkHealth`** + **`FpsHitscanWeapon.ApplyRespawnDefaultsOnServer`**；**`PlayerDeathRespawn`** 运行时解析 **`MatchSpawnPoints`**，联机走 **`RequestRespawnFromOwner`** + ClientRpc 收尾 |
+| 2026-04-18 | **`NetMatchManager`**（`DeathMatch` 与 **`MatchManager`** 同物体 + **`NetworkObject`**）：服务器 **`NetworkVariable`** 同步剩余时间与 **`MatchEnded`**；**`MatchManager`** 在联机时读同步值，单机仍用本地倒计时 |
 | 2026-04-08 | **`FpsThirdPersonLocomotionAnimator`**：**`IsGrounded`** / **`VerticalSpeed`**；**`FpsPlayerMotor`**：**`VerticalVelocity`**；**`speed`** / **`IsCrouch`** / **`IsAiming`** 同前；**Third Person Root** 隐藏网格 |
 | 2026-04-08 | **`FpsAdsWorldFov`**：主相机开镜 **FOV** 平滑过渡（**`FpsInput.AimHeld`**）；**`Hip Fov`=0** 时 **Start** 读取当前相机；勿挂手臂相机 |
 | 2026-04-08 | **`FpsWeaponViewModelAnimator`**：**`Aiming`** 默认脚本插值（**`Smooth Aiming Parameter`**），避免混合树单帧 0/1 硬切；可调 **Blend In/Out Speed** |
@@ -308,7 +309,8 @@ FpsHitscanWeapon.FireOnce
 | 组件 | 做什么 |
 |------|--------|
 | **`MatchParticipant`** | 挂在**参战单位根**（`Player`、每个人机根）；**显示名**、**是否本地玩家**；`OnEnable` 时进入静态列表 **`ActiveParticipants`**。 |
-| **`MatchManager`** | **单例**（场景一个）；`Start` 用当前列表初始化击杀表；**订阅 `CombatKillBus`**：击杀者根上须有 **`MatchParticipant`** 才记分；**自杀**（`Killer==Victim`）不计；**倒计时**（`unscaled`）、**目标击杀**；有人达标 → **真实时间延迟** → **`timeScale=0`** → **`MatchEnded`** + 可选占位 UI；**时间到**按击杀比胜负、**允许并列**。 |
+| **`MatchManager`** | **单例**（场景一个）；`Start` 用当前列表初始化击杀表；**订阅 `CombatKillBus`**：击杀者根上须有 **`MatchParticipant`** 才记分；**自杀**（`Killer==Victim`）不计；**单机**：本地 **`unscaled`** 倒计时；**联机（Host 已监听且 `NetMatchManager` 已 Spawn）**：剩余时间与「已结束」读 **`NetMatchManager`** 的 **`NetworkVariable`**，服务器在 **`EndMatch`** 时标记结束；**目标击杀**；有人达标 → **真实时间延迟** → **`timeScale=0`** → **`MatchEnded`** + 可选占位 UI；**时间到**按击杀比胜负、**允许并列**。 |
+| **`NetMatchManager`** | 与 **`MatchManager`** 同物体；需 **`NetworkObject`**。仅**服务器**递减 **`_remainingSeconds`**，归零时通知 **`MatchManager.NotifyAuthorityTimeExpiredFromNetwork()`**；**`MarkEndedOnServer`** 在服务器 **`EndMatch`** 时写入 **`_matchEnded`**，使各端 HUD 的 **`RemainingMatchSeconds`** / **`IsMatchOver`** 一致。 |
 
 **数据流（击杀 → 记分）**
 
@@ -319,7 +321,7 @@ CombatKillBus.KillCommitted(KillReport)
   → 达目标击杀 或 时间归零 → MatchResult → 暂停 + 占位结算
 ```
 
-**场景挂载**：在 **`DeathMatch`** 中空物体挂 **`MatchManager`**；**`Player` 与每个人机根**各挂 **`MatchParticipant`**（填显示名；本地玩家勾选 **`Is Local Player`**）。可选：拖 **占位 Panel + TMP_Text + Button** 到 **`MatchManager`** 的结算引用，**Restart** 调用 **`RestartMatch()`**（重载当前场景并恢复 **`timeScale`**）。
+**场景挂载**：在 **`DeathMatch`** 中空物体挂 **`MatchManager`**；联机时同物体再加 **`NetworkObject`** + **`NetMatchManager`**（已写入 **`DeathMatch.unity`**）。**`Player` 与每个人机根**各挂 **`MatchParticipant`**（填显示名；本地玩家勾选 **`Is Local Player`**）。可选：拖 **占位 Panel + TMP_Text + Button** 到 **`MatchManager`** 的结算引用，**Restart** 调用 **`RestartMatch()`**（重载当前场景并恢复 **`timeScale`**）。
 
 ### 死斗 HUD（`DeathmatchHudView`）
 
@@ -345,6 +347,7 @@ CombatKillBus.KillCommitted(KillReport)
 - `Assets/01_Project/Scripts/Audio/`：`AudioManager`、`FpsWeaponAudioObserver`、`FpsHitscanSurfaceAudioFeedback`、**`KillStreakAudioFeedback`**
 - `Assets/01_Project/Scripts/Core/`：`DontDestroyThisRoot`（通用：仅挂在场景根，用于 DDOL）
 - `Assets/01_Project/Scripts/Match/`：**`MatchParticipant`**、**`MatchManager`**、**`MatchResult`** / **`MatchEndReason`**、**`KillStreakTracker`**
+- `Assets/01_Project/Scripts/Netcode/`：**`NetMatchManager`**（联机：服务器倒计时与结束状态 **`NetworkVariable`**；与 **`MatchManager`** 同场景物体）
 - `Assets/01_Project/Scripts/Ai/`：**`FpsAiHitscanWeapon`**（人机 Hitscan）、**`FpsAiHitscanShooter`**（行为：朝玩家开火）；联机可不挂
 - `Assets/01_Project/Scripts/Fps/FpsPlayerMotor.cs`：`FpsPlayerMotor`（与 `Player` 同物体）
 
@@ -376,7 +379,8 @@ CombatKillBus.KillCommitted(KillReport)
 | `FpsAiHitscanWeapon`（`Ai/`） | 人机专用：拖 **`HitscanWeaponConfig`**、**`LayerMask`**；与 **`FpsHitscanWeapon`** 共用 **`HitscanShotResolver`** |
 | `FpsAiHitscanShooter`（`Ai/`） | 单机 AI：拖 **`FpsAiHitscanWeapon`**、**`Aim Origin`**、**`Target`** 或 **`Player` Tag** |
 | `MatchParticipant` | 参战者身份与显示名；进 **`MatchManager`** 记分表 |
-| `MatchManager` | 订阅 **`CombatKillBus`**、倒计时与目标击杀、**`MatchEnded`**、占位结算、**`RestartMatch`** |
+| `MatchManager` | 订阅 **`CombatKillBus`**；单机本地倒计时，联机读 **`NetMatchManager`**；目标击杀、**`MatchEnded`**、占位结算、**`RestartMatch`** |
+| `NetMatchManager` | 联机：服务器写 **`NetworkVariable`**（剩余秒、已结束）；与 **`MatchManager`** 同物体，需 **`NetworkObject`** |
 | `DeathmatchHudView` | 读 **`MatchManager`**、**`CombatKillBus`**、本地 **`Health`**；顶栏/右上/左下 HUD |
 | `KillStreakTracker` | **本地 Player 根**：**`CombatKillBus`** + 时间窗；**`StreakChanged(int)`**；死亡 / **`MatchEnded`** / 超时清零 |
 | `KillStreakAudioFeedback` | 同 **`Player`**：订阅 **`KillStreakTracker.StreakChanged`**，按档位 **`AudioManager.PlayOneShot2D`**（1～5） |

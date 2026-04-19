@@ -10286,6 +10286,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1421627363}
   - component: {fileID: 1421627364}
+  - component: {fileID: 1421627365}
+  - component: {fileID: 1421627366}
   m_Layer: 0
   m_Name: MatchManager
   m_TagString: Untagged
@@ -10327,6 +10329,39 @@ MonoBehaviour:
   _endGamePanel: {fileID: 687492153}
   _endSummaryText: {fileID: 338932284}
   _restartButton: {fileID: 491539635}
+--- !u!114 &1421627365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1421627362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 3847261521
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 0
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &1421627366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1421627362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4e8f0a12b5d4e7c9f0a1b2c3d4e5f60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1428310105
 PrefabInstance:
   m_ObjectHideFlags: 0

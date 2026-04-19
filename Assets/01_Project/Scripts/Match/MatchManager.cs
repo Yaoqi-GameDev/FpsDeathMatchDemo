@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using FpsDemo.Combat;
 using FpsDemo.Netcode;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -30,13 +31,24 @@ namespace FpsDemo.Match
         [SerializeField] private TMP_Text _endSummaryText;
         [SerializeField] private Button _restartButton;
 
-        /// <summary>本局剩余秒数（局进行中递减；结束后不再更新）。</summary>
-        public float RemainingMatchSeconds { get; private set; }
+        /// <summary>本局剩余秒数。单机：本地递减；联机：读 <see cref="NetMatchManager"/> 同步值。</summary>
+        public float RemainingMatchSeconds =>
+            NetMatchManager.ControlsMatchTimer && NetMatchManager.Instance != null
+                ? NetMatchManager.Instance.RemainingSecondsSynced
+                : _localRemaining;
+
+        /// <summary>Inspector 配置的对局时长（供 <see cref="NetMatchManager"/> 初始化 NV）。</summary>
+        public float ConfiguredMatchDurationSeconds => _matchDurationSeconds;
 
         /// <summary>目标击杀数（与 Inspector 一致）。</summary>
         public int TargetKills => _targetKills;
 
-        public bool IsMatchOver => _state == MatchState.Ended;
+        public bool IsMatchOver =>
+            NetMatchManager.ControlsMatchTimer && NetMatchManager.Instance != null
+                ? NetMatchManager.Instance.MatchEndedSynced
+                : _state == MatchState.Ended;
+
+        private float _localRemaining;
 
         /// <summary>一局结束；订阅者勿阻塞主线程。</summary>
         public event Action<MatchResult> MatchEnded;
@@ -75,7 +87,7 @@ namespace FpsDemo.Match
 
         private void Start()
         {
-            RemainingMatchSeconds = Mathf.Max(0f, _matchDurationSeconds);
+            _localRemaining = Mathf.Max(0f, _matchDurationSeconds);
             _kills.Clear();
             foreach (var p in MatchParticipant.ActiveParticipants)
                 _kills[p] = 0;
@@ -128,12 +140,23 @@ namespace FpsDemo.Match
             if (_state != MatchState.Running)
                 return;
 
-            RemainingMatchSeconds -= Time.unscaledDeltaTime;
-            if (RemainingMatchSeconds <= 0f)
+            if (NetMatchManager.ControlsMatchTimer)
+                return;
+
+            _localRemaining -= Time.unscaledDeltaTime;
+            if (_localRemaining <= 0f)
             {
-                RemainingMatchSeconds = 0f;
+                _localRemaining = 0f;
                 EndMatchByTimeUp();
             }
+        }
+
+        /// <summary>仅服务器：由 <see cref="NetMatchManager"/> 在倒计时归零时调用。</summary>
+        public void NotifyAuthorityTimeExpiredFromNetwork()
+        {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+                return;
+            EndMatchByTimeUp();
         }
 
         private void OnKillCommitted(KillReport report)
@@ -194,6 +217,9 @@ namespace FpsDemo.Match
         {
             if (_state == MatchState.Ended)
                 return;
+
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+                NetMatchManager.Instance?.MarkEndedOnServer();
 
             _state = MatchState.Ended;
             if (_broadcastRoutine != null)
