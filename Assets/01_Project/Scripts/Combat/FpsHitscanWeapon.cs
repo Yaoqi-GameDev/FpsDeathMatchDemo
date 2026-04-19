@@ -11,7 +11,7 @@ namespace FpsDemo.Combat
     /// 第一人称 Hitscan：从 <see cref="Camera"/> 中心射线，命中 <see cref="IDamageable"/>，调用 <c>ApplyDamage(伤害, 伤害来源)</c>；伤害来源为 <see cref="Transform.root"/>（与 <c>Player</c> 根一致）。
     /// 射线<strong>包含</strong> Player 层，以便打人机/他人；<strong>同一角色根</strong>上的命中视为自伤并跳过（<c>TryResolveShot</c>）。
     /// 读 <see cref="FpsInput"/>；支持多份 <see cref="HitscanWeaponConfig"/> 与切枪（<b>1</b>/<b>2</b>），每槽独立弹药；可选拖「武器模型根」显隐。命中解析见 <see cref="HitscanShotResolver"/>；人机请用 <c>FpsAiHitscanWeapon</c>。
-    /// 联机且存在 <see cref="PlayerHitscanNetBridge"/> 时：Owner 发 <see cref="PlayerHitscanNetBridge.RequestHitscanShot"/>，仅服务器扣血；本机再用 <c>applyDamage:false</c> 解析一次供弹孔/准星等表现。
+    /// 联机且存在 <see cref="PlayerHitscanNetBridge"/> / <see cref="HitscanWeaponAmmoSync"/> 时：弹匣与备弹由服务器 <see cref="NetworkVariable{T}"/> 同步；开火由 <see cref="PlayerHitscanNetBridge"/> 在服务端扣弹后再解析伤害；本机再用 <c>applyDamage:false</c> 解析一次供弹孔/准星等表现。
     /// 事件：<see cref="ShotHitDamageable"/>、<see cref="ShotResolved"/>、<see cref="ShotFired"/>（顺序）、<see cref="ReloadStarted"/>、
     /// <see cref="DryFire"/>（弹匣空时本帧按下开火）、<see cref="WeaponSlotChanged"/>（槽位变化后，参数为新下标）。
     /// </summary>
@@ -61,11 +61,17 @@ namespace FpsDemo.Combat
         /// <summary>当前武器配置（切枪后为当前槽）。</summary>
         public HitscanWeaponConfig ActiveConfig => _configs[_currentIndex];
 
+        /// <summary>配置槽数量（与 <see cref="_configs"/> 长度一致）。</summary>
+        public int SlotCount => _configs != null ? _configs.Length : 0;
+
         /// <summary>当前槽位（0 起步），与切枪键一致。</summary>
         public int CurrentWeaponIndex => _currentIndex;
 
-        public int AmmoInMagazine => _magazinePerSlot[_currentIndex];
-        public int ReserveAmmo => _reservePerSlot[_currentIndex];
+        public int AmmoInMagazine =>
+            UseAuthoritativeAmmo ? _ammoSync.GetMagazine(_currentIndex) : _magazinePerSlot[_currentIndex];
+
+        public int ReserveAmmo =>
+            UseAuthoritativeAmmo ? _ammoSync.GetReserve(_currentIndex) : _reservePerSlot[_currentIndex];
         public bool IsReloading { get; private set; }
 
         /// <summary>槽位对应的武器显隐根（与 <see cref="_weaponVisualRoots"/> 一致）；供视图层桥接取 <see cref="Animator"/>。</summary>
@@ -86,6 +92,35 @@ namespace FpsDemo.Combat
         private HitscanWeaponConfig Current => _configs[_currentIndex];
 
         private PlayerHitscanNetBridge _hitscanNetBridge;
+        private HitscanWeaponAmmoSync _ammoSync;
+
+        /// <summary>联机且 <see cref="PlayerHitscanNetBridge"/> + <see cref="HitscanWeaponAmmoSync"/> 已生成时，弹药以服务器 <see cref="NetworkVariable{T}"/> 为准。</summary>
+        private bool UseAuthoritativeAmmo
+        {
+            get
+            {
+                var nm = NetworkManager.Singleton;
+                return nm != null && nm.IsListening
+                    && _hitscanNetBridge != null && _ammoSync != null
+                    && _ammoSync.IsSpawned;
+            }
+        }
+
+        /// <summary>槽位弹匣容量（配置）。</summary>
+        public int GetMagazineCapacityForSlot(int slotIndex)
+        {
+            if (_configs == null || slotIndex < 0 || slotIndex >= _configs.Length || _configs[slotIndex] == null)
+                return 0;
+            return _configs[slotIndex].MagazineSize;
+        }
+
+        /// <summary>槽位开局备弹（配置）。</summary>
+        public int GetStartingReserveForSlot(int slotIndex)
+        {
+            if (_configs == null || slotIndex < 0 || slotIndex >= _configs.Length || _configs[slotIndex] == null)
+                return 0;
+            return Mathf.Max(0, _configs[slotIndex].StartingReserveAmmo);
+        }
 
         private void Awake()
         {
@@ -120,6 +155,7 @@ namespace FpsDemo.Combat
             _currentIndex = 0;
             ApplyWeaponVisuals();
             _hitscanNetBridge = GetComponent<PlayerHitscanNetBridge>();
+            _ammoSync = GetComponent<HitscanWeaponAmmoSync>();
         }
 
         private void Update()
@@ -178,12 +214,17 @@ namespace FpsDemo.Combat
             int prevSlot = _currentIndex;
             _currentIndex = 0;
 
-            for (int i = 0; i < _configs.Length; i++)
+            if (UseAuthoritativeAmmo)
+                _ammoSync.RequestResetAmmoFromOwner();
+            else
             {
-                if (_configs[i] == null)
-                    continue;
-                _magazinePerSlot[i] = _configs[i].MagazineSize;
-                _reservePerSlot[i] = Mathf.Max(0, _configs[i].StartingReserveAmmo);
+                for (int i = 0; i < _configs.Length; i++)
+                {
+                    if (_configs[i] == null)
+                        continue;
+                    _magazinePerSlot[i] = _configs[i].MagazineSize;
+                    _reservePerSlot[i] = Mathf.Max(0, _configs[i].StartingReserveAmmo);
+                }
             }
 
             ApplyWeaponVisuals();
@@ -234,6 +275,12 @@ namespace FpsDemo.Combat
         {
             IsReloading = false;
 
+            if (UseAuthoritativeAmmo)
+            {
+                _ammoSync.RequestApplyReload(_currentIndex);
+                return;
+            }
+
             int need = Current.MagazineSize - AmmoInMagazine;
             if (need <= 0 || ReserveAmmo <= 0)
                 return;
@@ -245,12 +292,13 @@ namespace FpsDemo.Combat
 
         private void FireOnce()
         {
-            _magazinePerSlot[_currentIndex]--;
+            if (!UseAuthoritativeAmmo)
+                _magazinePerSlot[_currentIndex]--;
 
             Ray ray = new Ray(_camera.transform.position, _camera.transform.forward);
 
             var nm = NetworkManager.Singleton;
-            bool online = nm != null && nm.IsListening && _hitscanNetBridge != null;
+            bool online = nm != null && nm.IsListening && _hitscanNetBridge != null && _ammoSync != null && _ammoSync.IsSpawned;
 
             if (online)
             {

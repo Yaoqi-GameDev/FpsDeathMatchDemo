@@ -10,13 +10,16 @@ namespace FpsDemo.Netcode
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(NetworkObject))]
+    [RequireComponent(typeof(HitscanWeaponAmmoSync))]
     public sealed class PlayerHitscanNetBridge : NetworkBehaviour
     {
         private FpsHitscanWeapon _weapon;
+        private HitscanWeaponAmmoSync _ammoSync;
 
         private void Awake()
         {
             _weapon = GetComponent<FpsHitscanWeapon>();
+            _ammoSync = GetComponent<HitscanWeaponAmmoSync>();
         }
 
         /// <summary>由 <see cref="FpsHitscanWeapon"/> 在 Owner 上调用。</summary>
@@ -33,7 +36,12 @@ namespace FpsDemo.Netcode
         {
             if (_weapon == null)
                 _weapon = GetComponent<FpsHitscanWeapon>();
-            if (_weapon == null)
+            if (_ammoSync == null)
+                _ammoSync = GetComponent<HitscanWeaponAmmoSync>();
+            if (_weapon == null || _ammoSync == null)
+                return;
+
+            if (!_ammoSync.ServerTryConsumeRound(weaponSlotIndex))
                 return;
 
             var ray = new Ray(origin, direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward);
