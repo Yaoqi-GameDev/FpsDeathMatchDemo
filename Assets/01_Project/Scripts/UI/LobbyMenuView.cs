@@ -1,3 +1,4 @@
+using FpsDemo.Netcode;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -109,8 +110,7 @@ namespace FpsDemo.UI
 
         private void OnCreateRoomClicked()
         {
-            SetHint("Host: wire StartHost + load match scene here.");
-            Debug.Log("[Lobby] Create room (host) — hook NetworkManager.StartHost + LoadScene.");
+            LobbyNetSession.TryStartHostAndLoadMatch(SetHint);
         }
 
         private void OnJoinGameClicked()
@@ -119,14 +119,12 @@ namespace FpsDemo.UI
                 ? _joinAddressInput.text.Trim()
                 : "127.0.0.1";
             string portStr = _joinPortInput != null ? _joinPortInput.text.Trim() : "";
-            SetHint($"Join: target {addr}" + (string.IsNullOrEmpty(portStr) ? "" : $" :{portStr}") + " — hook StartClient + Transport.");
-            Debug.Log($"[Lobby] Join → address={addr} (port field → Transport).");
+            LobbyNetSession.TryStartClient(addr, portStr, SetHint);
         }
 
         private void OnSinglePlayerClicked()
         {
-            SetHint("Offline: load DeathMatch without starting Netcode.");
-            Debug.Log("[Lobby] Single player — hook SceneManager.LoadScene (no NGO).");
+            LobbyNetSession.TryLoadOfflineMatch(SetHint);
         }
 
         private void OnSettingsClicked()
