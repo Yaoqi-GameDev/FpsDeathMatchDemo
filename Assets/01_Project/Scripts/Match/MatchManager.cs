@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using FpsDemo.Combat;
+using FpsDemo.Netcode;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -89,6 +90,29 @@ namespace FpsDemo.Match
                 _endGamePanel.SetActive(false);
         }
 
+        /// <summary>
+        /// 参战者启用时登记（联机玩家晚于本组件 <see cref="Start"/> 生成时也会调用）。已存在则保持击杀数不变。
+        /// </summary>
+        public static void RegisterParticipant(MatchParticipant p)
+        {
+            if (p == null || Instance == null || Instance._state != MatchState.Running)
+                return;
+
+            if (Instance._kills.ContainsKey(p))
+                return;
+
+            Instance._kills[p] = 0;
+        }
+
+        /// <summary>参战者禁用时从记分表移除（断线、销毁等）。</summary>
+        public static void UnregisterParticipant(MatchParticipant p)
+        {
+            if (p == null || Instance == null)
+                return;
+
+            Instance._kills.Remove(p);
+        }
+
         private void OnEnable()
         {
             CombatKillBus.KillCommitted += OnKillCommitted;
@@ -123,7 +147,7 @@ namespace FpsDemo.Match
             if (report.Victim != null && report.Killer == report.Victim)
                 return;
 
-            var killerPart = report.Killer.GetComponent<MatchParticipant>();
+            var killerPart = report.Killer.GetComponentInParent<MatchParticipant>();
             if (killerPart == null)
                 return;
 
@@ -131,6 +155,10 @@ namespace FpsDemo.Match
                 return;
 
             _kills[killerPart]++;
+
+            var statsNet = killerPart.GetComponent<PlayerMatchStatsNet>();
+            if (statsNet != null && statsNet.IsSpawned)
+                statsNet.ServerNotifyKillScored();
 
             if (_kills[killerPart] >= _targetKills)
                 BeginTargetReachedSequence();

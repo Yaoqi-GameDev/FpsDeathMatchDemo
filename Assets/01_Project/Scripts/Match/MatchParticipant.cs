@@ -35,10 +35,13 @@ namespace FpsDemo.Match
                 ParticipantId = _nextId++;
             if (!Active.Contains(this))
                 Active.Add(this);
+
+            MatchManager.RegisterParticipant(this);
         }
 
         private void OnDisable()
         {
+            MatchManager.UnregisterParticipant(this);
             Active.Remove(this);
         }
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using FpsDemo.Combat;
 using FpsDemo.Match;
+using FpsDemo.Netcode;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -135,13 +136,12 @@ namespace FpsDemo.UI
 
             if (_leaderboardText != null)
             {
-                var rows = mm.GetLeaderboardDescending();
+                var rows = BuildLeaderboardRows(mm);
                 var lines = new List<string>(rows.Count);
                 int rank = 1;
                 foreach (var row in rows)
                 {
-                    string name = row.participant != null ? row.participant.DisplayName : "?";
-                    lines.Add($"{rank}. {name}  {row.kills}");
+                    lines.Add($"{rank}. {row.name}  {row.kills}");
                     rank++;
                 }
 
@@ -150,6 +150,51 @@ namespace FpsDemo.UI
                     ? string.Join("\n", lines)
                     : $"{target}\n" + string.Join("\n", lines);
             }
+        }
+
+        /// <summary>联机：已生成玩家的击杀来自 <see cref="PlayerMatchStatsNet.NetworkKills"/>；其余（如仅场景人机）用 <see cref="MatchManager.GetKills"/>。</summary>
+        private static List<(string name, int kills)> BuildLeaderboardRows(MatchManager mm)
+        {
+            var nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening)
+            {
+                var classic = mm.GetLeaderboardDescending();
+                var list = new List<(string name, int kills)>(classic.Count);
+                foreach (var row in classic)
+                {
+                    string name = row.participant != null ? row.participant.DisplayName : "?";
+                    list.Add((name, row.kills));
+                }
+
+                return list;
+            }
+
+            var byParticipant = new Dictionary<MatchParticipant, int>(16);
+
+            foreach (var netObj in nm.SpawnManager.SpawnedObjects.Values)
+            {
+                if (netObj == null || !netObj.IsSpawned)
+                    continue;
+                var stats = netObj.GetComponent<PlayerMatchStatsNet>();
+                var mp = netObj.GetComponent<MatchParticipant>();
+                if (stats == null || mp == null)
+                    continue;
+                byParticipant[mp] = stats.NetworkKills;
+            }
+
+            foreach (var p in MatchParticipant.ActiveParticipants)
+            {
+                if (p == null || byParticipant.ContainsKey(p))
+                    continue;
+                byParticipant[p] = mm.GetKills(p);
+            }
+
+            var rows = new List<(string name, int kills)>(byParticipant.Count);
+            foreach (var kv in byParticipant)
+                rows.Add((kv.Key != null ? kv.Key.DisplayName : "?", kv.Value));
+
+            rows.Sort((a, b) => b.kills.CompareTo(a.kills));
+            return rows;
         }
 
         private void RefreshHealth()
