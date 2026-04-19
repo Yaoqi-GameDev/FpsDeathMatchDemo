@@ -23,6 +23,22 @@ namespace FpsDemo.Combat
             out bool hitDamageable,
             out ShotHitInfo shotInfo)
         {
+            Resolve(ray, maxRange, hitLayers, instigatorWeaponTransform, damagePerShot, bodyDamageConfig, true,
+                out hitDamageable, out shotInfo);
+        }
+
+        /// <param name="applyDamage">为 <c>false</c> 时只做命中判定与 <see cref="ShotHitInfo"/>，不扣血（客户端预测表现）。</param>
+        public static void Resolve(
+            Ray ray,
+            float maxRange,
+            LayerMask hitLayers,
+            Transform instigatorWeaponTransform,
+            float damagePerShot,
+            BodyDamageMultiplierConfig bodyDamageConfig,
+            bool applyDamage,
+            out bool hitDamageable,
+            out ShotHitInfo shotInfo)
+        {
             hitDamageable = false;
             Health sourceHealth = instigatorWeaponTransform.GetComponent<Health>()
                 ?? instigatorWeaponTransform.GetComponentInParent<Health>(true);
@@ -50,7 +66,8 @@ namespace FpsDemo.Combat
                     float finalDamage = damagePerShot * mult;
 
                     hitDamageable = true;
-                    damageable.ApplyDamage(finalDamage, instigator);
+                    if (applyDamage)
+                        damageable.ApplyDamage(finalDamage, instigator);
                     shotInfo = new ShotHitInfo(true, h.point, h.normal, true, h.collider, region, mult, damagePerShot, finalDamage);
                     return;
                 }

@@ -1,6 +1,8 @@
 using System;
 using FpsDemo.Data;
 using FpsDemo.Fps;
+using FpsDemo.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace FpsDemo.Combat
@@ -9,6 +11,7 @@ namespace FpsDemo.Combat
     /// 第一人称 Hitscan：从 <see cref="Camera"/> 中心射线，命中 <see cref="IDamageable"/>，调用 <c>ApplyDamage(伤害, 伤害来源)</c>；伤害来源为 <see cref="Transform.root"/>（与 <c>Player</c> 根一致）。
     /// 射线<strong>包含</strong> Player 层，以便打人机/他人；<strong>同一角色根</strong>上的命中视为自伤并跳过（<c>TryResolveShot</c>）。
     /// 读 <see cref="FpsInput"/>；支持多份 <see cref="HitscanWeaponConfig"/> 与切枪（<b>1</b>/<b>2</b>），每槽独立弹药；可选拖「武器模型根」显隐。命中解析见 <see cref="HitscanShotResolver"/>；人机请用 <c>FpsAiHitscanWeapon</c>。
+    /// 联机且存在 <see cref="PlayerHitscanNetBridge"/> 时：Owner 发 <see cref="PlayerHitscanNetBridge.RequestHitscanShot"/>，仅服务器扣血；本机再用 <c>applyDamage:false</c> 解析一次供弹孔/准星等表现。
     /// 事件：<see cref="ShotHitDamageable"/>、<see cref="ShotResolved"/>、<see cref="ShotFired"/>（顺序）、<see cref="ReloadStarted"/>、
     /// <see cref="DryFire"/>（弹匣空时本帧按下开火）、<see cref="WeaponSlotChanged"/>（槽位变化后，参数为新下标）。
     /// </summary>
@@ -82,6 +85,8 @@ namespace FpsDemo.Combat
 
         private HitscanWeaponConfig Current => _configs[_currentIndex];
 
+        private PlayerHitscanNetBridge _hitscanNetBridge;
+
         private void Awake()
         {
             if (_configs == null || _configs.Length == 0)
@@ -114,6 +119,7 @@ namespace FpsDemo.Combat
 
             _currentIndex = 0;
             ApplyWeaponVisuals();
+            _hitscanNetBridge = GetComponent<PlayerHitscanNetBridge>();
         }
 
         private void Update()
@@ -242,19 +248,64 @@ namespace FpsDemo.Combat
             _magazinePerSlot[_currentIndex]--;
 
             Ray ray = new Ray(_camera.transform.position, _camera.transform.forward);
+
+            var nm = NetworkManager.Singleton;
+            bool online = nm != null && nm.IsListening && _hitscanNetBridge != null;
+
+            if (online)
+            {
+                _hitscanNetBridge.RequestHitscanShot(ray, _currentIndex);
+                HitscanShotResolver.Resolve(
+                    ray,
+                    Current.MaxRange,
+                    _hitLayers,
+                    transform,
+                    Current.DamagePerShot,
+                    _bodyDamageMultiplierConfig,
+                    false,
+                    out bool hitDamageableFx,
+                    out ShotHitInfo shotInfoFx);
+                ShotHitDamageable?.Invoke(hitDamageableFx);
+                ShotResolved?.Invoke(shotInfoFx);
+            }
+            else
+            {
+                HitscanShotResolver.Resolve(
+                    ray,
+                    Current.MaxRange,
+                    _hitLayers,
+                    transform,
+                    Current.DamagePerShot,
+                    _bodyDamageMultiplierConfig,
+                    out bool hitDamageable,
+                    out ShotHitInfo shotInfo);
+                ShotHitDamageable?.Invoke(hitDamageable);
+                ShotResolved?.Invoke(shotInfo);
+            }
+
+            ShotFired?.Invoke();
+        }
+
+        /// <summary>仅服务器：按槽位用本武器配置做 Hitscan 并扣血（<see cref="PlayerHitscanNetBridge"/> 的 ServerRpc 调用）。</summary>
+        public void ServerResolveShot(int weaponSlotIndex, Ray ray, out bool hitDamageable, out ShotHitInfo shotInfo)
+        {
+            hitDamageable = false;
+            shotInfo = default;
+
+            if (_configs == null || weaponSlotIndex < 0 || weaponSlotIndex >= _configs.Length || _configs[weaponSlotIndex] == null)
+                return;
+
+            var cfg = _configs[weaponSlotIndex];
             HitscanShotResolver.Resolve(
                 ray,
-                Current.MaxRange,
+                cfg.MaxRange,
                 _hitLayers,
                 transform,
-                Current.DamagePerShot,
+                cfg.DamagePerShot,
                 _bodyDamageMultiplierConfig,
-                out bool hitDamageable,
-                out ShotHitInfo shotInfo);
-
-            ShotHitDamageable?.Invoke(hitDamageable);
-            ShotResolved?.Invoke(shotInfo);
-            ShotFired?.Invoke();
+                true,
+                out hitDamageable,
+                out shotInfo);
         }
     }
 }

@@ -1,0 +1,43 @@
+using FpsDemo.Combat;
+using Unity.Netcode;
+using UnityEngine;
+
+namespace FpsDemo.Netcode
+{
+    /// <summary>
+    /// Owner 将本帧射线发给服务器，由 <see cref="FpsHitscanWeapon.ServerResolveShot"/> 在服务端做 Hitscan 扣血。
+    /// 挂在 Player 根（与 <see cref="NetworkObject"/>、<see cref="FpsHitscanWeapon"/> 同物体）。
+    /// </summary>
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(NetworkObject))]
+    public sealed class PlayerHitscanNetBridge : NetworkBehaviour
+    {
+        private FpsHitscanWeapon _weapon;
+
+        private void Awake()
+        {
+            _weapon = GetComponent<FpsHitscanWeapon>();
+        }
+
+        /// <summary>由 <see cref="FpsHitscanWeapon"/> 在 Owner 上调用。</summary>
+        public void RequestHitscanShot(Ray ray, int weaponSlotIndex)
+        {
+            if (!IsOwner || !IsSpawned || _weapon == null)
+                return;
+
+            SubmitHitscanShotServerRpc(ray.origin, ray.direction, weaponSlotIndex);
+        }
+
+        [ServerRpc(RequireOwnership = true)]
+        private void SubmitHitscanShotServerRpc(Vector3 origin, Vector3 direction, int weaponSlotIndex)
+        {
+            if (_weapon == null)
+                _weapon = GetComponent<FpsHitscanWeapon>();
+            if (_weapon == null)
+                return;
+
+            var ray = new Ray(origin, direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward);
+            _weapon.ServerResolveShot(weaponSlotIndex, ray, out _, out _);
+        }
+    }
+}
