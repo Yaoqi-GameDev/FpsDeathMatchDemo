@@ -142,6 +142,9 @@ namespace FpsDemo.Fps
 
             _lastFrame = frame;
 
+            if (ShouldApplyOwnerClientNormalModeCameraPivot())
+                ApplyOwnerClientNormalModeCameraPivot(in frame);
+
             if (!ShouldSimulateMotorPhysics())
                 return;
 
@@ -171,6 +174,38 @@ namespace FpsDemo.Fps
             if (no == null || !no.IsSpawned)
                 return true;
             return NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+        }
+
+        /// <summary>联机纯客户端 Owner：本地不跑物理，但仍需根据输入更新第一人称相机高度（蹲/站），与服务器 <see cref="ApplyCapsuleForNormal"/> 判定一致。</summary>
+        private bool ShouldApplyOwnerClientNormalModeCameraPivot()
+        {
+            if (ShouldSimulateMotorPhysics())
+                return false;
+            var no = GetComponent<NetworkObject>();
+            return no != null && no.IsSpawned && no.IsOwner;
+        }
+
+        private void ApplyOwnerClientNormalModeCameraPivot(in PlayerLocomotionInput input)
+        {
+            if (_mode != MotorMode.Normal)
+                return;
+
+            bool sprinting = input.SprintHeld
+                && (!_limitSpeedToWalkWhileAiming || !input.AimHeld)
+                && (!_limitSpeedToWalkWhileFiring || !input.FireHeld);
+
+            if (sprinting)
+                _sprintGraceTimer = _sprintSlideGraceSeconds;
+            else
+                _sprintGraceTimer = Mathf.Max(0f, _sprintGraceTimer - Time.deltaTime);
+
+            bool slideEligible = sprinting || _sprintGraceTimer > 0f;
+            bool crouch = input.CrouchHeld && !slideEligible;
+
+            if (crouch)
+                SetCameraPivotY(_crouchCameraPivotLocalY);
+            else
+                SetCameraPivotY(_standingCameraPivotLocalY);
         }
 
         private ILocomotionInputSource ResolveLocomotionSource()
