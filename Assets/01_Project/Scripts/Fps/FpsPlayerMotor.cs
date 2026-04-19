@@ -88,6 +88,9 @@ namespace FpsDemo.Fps
         /// <summary>松 Shift 后倒计时；按住 Shift 时重置为满。</summary>
         private float _sprintGraceTimer;
 
+        /// <summary>联机纯客户端 Owner：本地镜像滑铲持续时间，仅用于第一人称相机高度（与服务器 <see cref="StartSlide"/> 时长一致）。</summary>
+        private float _ownerClientVisualSlideTimeLeft;
+
         private PlayerLocomotionInput _lastFrame;
 
         /// <summary>当前水平速度大小（m/s，XZ），供第三人称全身 Animator 等与移动动画对齐。</summary>
@@ -190,6 +193,8 @@ namespace FpsDemo.Fps
             if (_mode != MotorMode.Normal)
                 return;
 
+            _slideCooldownLeft = Mathf.Max(0f, _slideCooldownLeft - Time.deltaTime);
+
             bool sprinting = input.SprintHeld
                 && (!_limitSpeedToWalkWhileAiming || !input.AimHeld)
                 && (!_limitSpeedToWalkWhileFiring || !input.FireHeld);
@@ -200,12 +205,50 @@ namespace FpsDemo.Fps
                 _sprintGraceTimer = Mathf.Max(0f, _sprintGraceTimer - Time.deltaTime);
 
             bool slideEligible = sprinting || _sprintGraceTimer > 0f;
-            bool crouch = input.CrouchHeld && !slideEligible;
 
+            if (_ownerClientVisualSlideTimeLeft > 0f)
+            {
+                _ownerClientVisualSlideTimeLeft -= Time.deltaTime;
+                SetCameraPivotY(_slideCameraPivotLocalY);
+                if (_ownerClientVisualSlideTimeLeft <= 0f)
+                {
+                    _ownerClientVisualSlideTimeLeft = 0f;
+                    _slideCooldownLeft = _slideCooldown;
+                }
+
+                return;
+            }
+
+            bool grounded = OwnerClientApproxGrounded();
+            bool trySlide = input.CrouchPressedThisFrame
+                && grounded
+                && _slideCooldownLeft <= 0f
+                && slideEligible;
+
+            if (trySlide)
+            {
+                _ownerClientVisualSlideTimeLeft = _slideDuration;
+                SetCameraPivotY(_slideCameraPivotLocalY);
+                return;
+            }
+
+            bool crouch = input.CrouchHeld && !slideEligible;
             if (crouch)
                 SetCameraPivotY(_crouchCameraPivotLocalY);
             else
                 SetCameraPivotY(_standingCameraPivotLocalY);
+        }
+
+        /// <summary>纯客户端 <see cref="CharacterController"/> 被关闭时 <see cref="CharacterController.isGrounded"/> 不可用，用短射线近似贴地（与 <see cref="UpdateNormal"/> 滑铲条件对齐）。</summary>
+        private bool OwnerClientApproxGrounded()
+        {
+            if (_controller != null && _controller.enabled)
+                return _controller.isGrounded;
+
+            Vector3 o = transform.position + Vector3.up * 0.08f;
+            if (!Physics.Raycast(o, Vector3.down, out RaycastHit hit, 0.45f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                return false;
+            return !hit.collider.transform.IsChildOf(transform);
         }
 
         private ILocomotionInputSource ResolveLocomotionSource()
@@ -482,6 +525,7 @@ namespace FpsDemo.Fps
             _velocity = Vector3.zero;
             _slideCooldownLeft = 0f;
             _slideTimeLeft = 0f;
+            _ownerClientVisualSlideTimeLeft = 0f;
             _sprintGraceTimer = 0f;
             _groundedTimer = 0f;
             _mode = MotorMode.Normal;
