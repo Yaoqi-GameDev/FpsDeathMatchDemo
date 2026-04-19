@@ -10324,7 +10324,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _matchDurationSeconds: 300
-  _targetKills: 8
+  _targetKills: 1
   _targetReachedBroadcastSeconds: 2
   _endGamePanel: {fileID: 687492153}
   _endSummaryText: {fileID: 338932284}
@@ -10341,7 +10341,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3847261521
+  GlobalObjectIdHash: 602311634
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 0

@@ -28,5 +28,13 @@ namespace FpsDemo.Netcode
                 return;
             _networkKills.Value++;
         }
+
+        /// <summary>新对局（场景重载但玩家未重新 Spawn）时由服务器清零。</summary>
+        internal void ServerResetKillsForNewRound()
+        {
+            if (!IsServer || !IsSpawned)
+                return;
+            _networkKills.Value = 0;
+        }
     }
 }

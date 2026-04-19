@@ -27,6 +27,14 @@ namespace FpsDemo.Match
         public void SetLocalPlayerForNetworking(bool isLocalPlayer)
         {
             _isLocalPlayer = isLocalPlayer;
+
+            if (!TryGetComponent<KillStreakTracker>(out var streak))
+                return;
+
+            if (isLocalPlayer)
+                streak.AssignLocalAfterNetworking();
+            else
+                streak.ReleaseLocalIfThis();
         }
 
         private void OnEnable()

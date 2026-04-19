@@ -100,6 +100,8 @@ namespace FpsDemo.Match
 
             if (_endGamePanel != null)
                 _endGamePanel.SetActive(false);
+
+            NetMatchManager.NotifyMatchSceneReadyForPossibleRematchReset();
         }
 
         /// <summary>
@@ -332,10 +334,16 @@ namespace FpsDemo.Match
                 yield return w != null ? w.DisplayName : "?";
         }
 
-        /// <summary>再来一局：恢复时间缩放并重新加载当前场景。</summary>
+        /// <summary>再来一局：恢复时间缩放并重新加载当前场景。联机时由服务器经 <see cref="NetMatchManager"/> 用 NGO 场景管理加载，客户端才会同步。</summary>
         public void RestartMatch()
         {
             Time.timeScale = 1f;
+            if (NetMatchManager.ControlsMatchTimer && NetMatchManager.Instance != null)
+            {
+                NetMatchManager.Instance.RequestRestartMatch();
+                return;
+            }
+
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }

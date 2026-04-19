@@ -29,6 +29,7 @@ namespace FpsDemo.Netcode
 
         public override void OnNetworkSpawn()
         {
+            _cachedSpawnPoints = null;
             if (IsServer)
                 StartCoroutine(ServerInitialSpawnAfterSceneReady());
         }
@@ -73,12 +74,26 @@ namespace FpsDemo.Netcode
         [ServerRpc(RequireOwnership = true)]
         private void RequestRespawnServerRpc()
         {
-            var msp = ResolveMatchSpawnPoints();
+            ServerApplyFullMatchRoundReset(ResolveMatchSpawnPoints());
+        }
+
+        /// <summary>
+        /// 服务器：传送 + 击杀 NV 清零 + 满血与弹药 + Owner 表现收尾。
+        /// NGO 重载同一场景时玩家物体常不再次 <see cref="OnNetworkSpawn"/>，需由 <see cref="NetMatchManager"/> 在 <see cref="NetworkSceneManager.OnLoadEventCompleted"/> 统一调用。
+        /// </summary>
+        internal void ServerApplyFullMatchRoundReset(MatchSpawnPoints msp)
+        {
+            if (!IsServer || !IsSpawned)
+                return;
+
             if (msp != null && msp.HasAnyValidPoint &&
                 msp.TryPickSpawnPointForRespawn(gameObject, out Transform spawnTf) && spawnTf != null)
             {
                 ApplyServerTeleport(spawnTf.position, spawnTf.eulerAngles.y);
             }
+
+            if (TryGetComponent<PlayerMatchStatsNet>(out var statsNet))
+                statsNet.ServerResetKillsForNewRound();
 
             if (TryGetComponent<NetworkHealthBridge>(out var netHb))
                 netHb.ServerReviveAndSyncNetworkHealth();

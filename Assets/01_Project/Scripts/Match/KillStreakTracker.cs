@@ -47,6 +47,19 @@ namespace FpsDemo.Match
                 Local = this;
         }
 
+        /// <summary>联机：<see cref="MatchParticipant.SetLocalPlayerForNetworking"/> 在网络 Spawn 之后才确定 Owner，晚于本组件 <see cref="Awake"/>。</summary>
+        internal void AssignLocalAfterNetworking()
+        {
+            Local = this;
+        }
+
+        /// <summary>联机：非 Owner 拷贝不应占用 <see cref="Local"/>。</summary>
+        internal void ReleaseLocalIfThis()
+        {
+            if (Local == this)
+                Local = null;
+        }
+
         private void OnDestroy()
         {
             if (Local == this)
