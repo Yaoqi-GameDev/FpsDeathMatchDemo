@@ -10,6 +10,7 @@ namespace FpsDemo.UI
     /// <summary>
     /// 死斗 HUD：顶栏剩余时间与击杀排行、右上击杀播报（最多 5 条）、左下玩家血量条。
     /// 挂在 Canvas 下空物体上，在 Inspector 拖引用；击杀条使用 <b>unscaled</b> 时间，与 <c>timeScale=0</c> 结算兼容。
+    /// 联机时本地玩家在 <see cref="Unity.Netcode.NetworkBehaviour.OnNetworkSpawn"/> 之后才标记为本地，需在 <see cref="Update"/> 中持续解析 <see cref="Health"/>。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class DeathmatchHudView : MonoBehaviour
@@ -55,21 +56,7 @@ namespace FpsDemo.UI
         private void Start()
         {
             _resolvedMatch = _matchManager != null ? _matchManager : MatchManager.Instance;
-
-            if (_localPlayerParticipant == null)
-            {
-                foreach (var p in MatchParticipant.ActiveParticipants)
-                {
-                    if (p != null && p.IsLocalPlayer)
-                    {
-                        _localPlayerParticipant = p;
-                        break;
-                    }
-                }
-            }
-
-            if (_playerHealth == null && _localPlayerParticipant != null)
-                _playerHealth = _localPlayerParticipant.GetComponent<Health>();
+            TryResolvePlayerHealth();
         }
 
         private void OnEnable()
@@ -91,9 +78,31 @@ namespace FpsDemo.UI
                     _feed.RemoveAt(i);
             }
 
+            TryResolvePlayerHealth();
             RefreshTimerAndLeaderboard();
             RefreshKillFeedLines();
             RefreshHealth();
+        }
+
+        private void TryResolvePlayerHealth()
+        {
+            if (_playerHealth != null)
+                return;
+
+            if (_localPlayerParticipant == null)
+            {
+                foreach (var p in MatchParticipant.ActiveParticipants)
+                {
+                    if (p != null && p.IsLocalPlayer)
+                    {
+                        _localPlayerParticipant = p;
+                        break;
+                    }
+                }
+            }
+
+            if (_localPlayerParticipant != null)
+                _playerHealth = _localPlayerParticipant.GetComponent<Health>();
         }
 
         private void RefreshTimerAndLeaderboard()

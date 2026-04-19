@@ -170,6 +170,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-04-18 | **`NetworkHealthBridge`**（Player 根）：服务器 `NetworkVariable` 同步血量，客户端 `Health.ApplyMirrorFromNetwork`；**`PlayerDeathRespawn`** 复活后 **`NotifyLocalReviveAfterDeath`**；**`DeathmatchHudView`** 每帧 **`TryResolvePlayerHealth`**；编辑器/Development 主机按 **F9** 仅 **`IsOwner`** 测扣血（避免 Host 上给全场玩家扣血） |
 | 2026-04-08 | **`FpsThirdPersonLocomotionAnimator`**：**`IsGrounded`** / **`VerticalSpeed`**；**`FpsPlayerMotor`**：**`VerticalVelocity`**；**`speed`** / **`IsCrouch`** / **`IsAiming`** 同前；**Third Person Root** 隐藏网格 |
 | 2026-04-08 | **`FpsAdsWorldFov`**：主相机开镜 **FOV** 平滑过渡（**`FpsInput.AimHeld`**）；**`Hip Fov`=0** 时 **Start** 读取当前相机；勿挂手臂相机 |
 | 2026-04-08 | **`FpsWeaponViewModelAnimator`**：**`Aiming`** 默认脚本插值（**`Smooth Aiming Parameter`**），避免混合树单帧 0/1 硬切；可调 **Blend In/Out Speed** |

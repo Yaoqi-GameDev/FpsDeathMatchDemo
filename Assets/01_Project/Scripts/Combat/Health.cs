@@ -25,6 +25,37 @@ namespace FpsDemo.Combat
         public float Max => _maxHealth;
         public bool IsDead { get; private set; }
 
+        /// <summary>
+        /// 联机客户端：由 <see cref="FpsDemo.Netcode.NetworkHealthBridge"/> 根据服务器 <c>NetworkVariable</c> 写入；
+        /// 会触发 <see cref="Damaged"/>（受击表现）与必要时 <see cref="Died"/>（本地死亡流程），<strong>不</strong>调用 <see cref="CombatKillBus"/>（击杀仅服务器权威发布）。
+        /// </summary>
+        public void ApplyMirrorFromNetwork(float newCurrent)
+        {
+            float clamped = Mathf.Clamp(newCurrent, 0f, _maxHealth);
+            if (Mathf.Approximately(clamped, Current) && (clamped > 0f || IsDead))
+                return;
+
+            float loss = Current - clamped;
+            if (loss > 0f)
+                Damaged?.Invoke(loss, null);
+
+            Current = clamped;
+
+            if (Current > 0f)
+            {
+                IsDead = false;
+                return;
+            }
+
+            Current = 0f;
+            if (IsDead)
+                return;
+
+            IsDead = true;
+            var report = new KillReport(gameObject, null);
+            Died?.Invoke(report);
+        }
+
         private void Awake()
         {
             Current = _maxHealth;

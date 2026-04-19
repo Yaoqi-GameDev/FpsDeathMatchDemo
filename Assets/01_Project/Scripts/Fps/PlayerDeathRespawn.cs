@@ -1,6 +1,7 @@
 using System.Collections;
 using FpsDemo.Combat;
 using FpsDemo.Match;
+using FpsDemo.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -137,6 +138,9 @@ namespace FpsDemo.Fps
             _controller.enabled = true;
 
             _health.ReviveFull();
+
+            if (TryGetComponent<NetworkHealthBridge>(out var netHealth))
+                netHealth.NotifyLocalReviveAfterDeath();
 
             if (_weapon != null)
                 _weapon.ResetAmmoToConfigDefaults();
