@@ -232,6 +232,39 @@ namespace FpsDemo.Combat
                 WeaponSlotChanged?.Invoke(_currentIndex);
         }
 
+        /// <summary>仅服务器：联机复活时重置槽位与弹药 NV，不发 Owner Rpc（由 <see cref="FpsDemo.Netcode.PlayerRespawnNetBridge"/> 调用）。</summary>
+        public void ApplyRespawnDefaultsOnServer()
+        {
+            var nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsServer)
+                return;
+
+            if (_configs == null || _configs.Length == 0 || _magazinePerSlot == null)
+                return;
+
+            IsReloading = false;
+            _nextFireTime = 0f;
+            int prevSlot = _currentIndex;
+            _currentIndex = 0;
+
+            if (_ammoSync != null && _ammoSync.IsSpawned)
+                _ammoSync.ServerReinitializeAmmoFromConfig();
+            else
+            {
+                for (int i = 0; i < _configs.Length; i++)
+                {
+                    if (_configs[i] == null)
+                        continue;
+                    _magazinePerSlot[i] = _configs[i].MagazineSize;
+                    _reservePerSlot[i] = Mathf.Max(0, _configs[i].StartingReserveAmmo);
+                }
+            }
+
+            ApplyWeaponVisuals();
+            if (prevSlot != 0)
+                WeaponSlotChanged?.Invoke(_currentIndex);
+        }
+
         private void TrySwitchWeapon(int index)
         {
             if (index < 0 || index >= _configs.Length || index == _currentIndex)

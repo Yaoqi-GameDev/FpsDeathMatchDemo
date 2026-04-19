@@ -167,5 +167,13 @@ namespace FpsDemo.Netcode
         {
             ServerInitializeFromWeaponConfig();
         }
+
+        /// <summary>仅服务器：按配置重填 NV（复活等，不发 Owner Rpc）。</summary>
+        public void ServerReinitializeAmmoFromConfig()
+        {
+            if (!IsServer)
+                return;
+            ServerInitializeFromWeaponConfig();
+        }
     }
 }

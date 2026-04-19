@@ -177,6 +177,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 | 2026-04-18 | **`AmmoHub`**：`_weapon` 可空，运行时按 **`MatchParticipant.IsLocalPlayer`** 解析武器（场景未拖引用时右下角弹药仍会更新；此前 `_weapon` 为空则整段不刷新、只显示 TMP 默认字） |
 | 2026-04-18 | **`MatchManager`**：`RegisterParticipant` / `UnregisterParticipant`；**`MatchParticipant`** 在 **`OnEnable`/`OnDisable`** 登记，联机晚生成的玩家也会进入 `_kills`，顶栏排行可记分 |
 | 2026-04-18 | **`PlayerMatchStatsNet`**（Player 根）：服务器 **`NetworkVariable<int>`** 同步击杀；**`MatchManager`** 击杀结算时 **`ServerNotifyKillScored`**；**`DeathmatchHudView`** 联机时从 **`SpawnManager.SpawnedObjects`** 拼排行（客户端击杀数与主机一致） |
+| 2026-04-18 | **`PlayerRespawnNetBridge`**：服务器 **`MatchSpawnPoints`** 随机出生/复活传送 + **`NetworkHealthBridge.ServerReviveAndSyncNetworkHealth`** + **`FpsHitscanWeapon.ApplyRespawnDefaultsOnServer`**；**`PlayerDeathRespawn`** 运行时解析 **`MatchSpawnPoints`**，联机走 **`RequestRespawnFromOwner`** + ClientRpc 收尾 |
 | 2026-04-08 | **`FpsThirdPersonLocomotionAnimator`**：**`IsGrounded`** / **`VerticalSpeed`**；**`FpsPlayerMotor`**：**`VerticalVelocity`**；**`speed`** / **`IsCrouch`** / **`IsAiming`** 同前；**Third Person Root** 隐藏网格 |
 | 2026-04-08 | **`FpsAdsWorldFov`**：主相机开镜 **FOV** 平滑过渡（**`FpsInput.AimHeld`**）；**`Hip Fov`=0** 时 **Start** 读取当前相机；勿挂手臂相机 |
 | 2026-04-08 | **`FpsWeaponViewModelAnimator`**：**`Aiming`** 默认脚本插值（**`Smooth Aiming Parameter`**），避免混合树单帧 0/1 硬切；可调 **Blend In/Out Speed** |

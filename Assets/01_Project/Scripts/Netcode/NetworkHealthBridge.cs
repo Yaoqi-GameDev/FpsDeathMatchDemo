@@ -60,6 +60,15 @@ namespace FpsDemo.Netcode
             _health.ApplyMirrorFromNetwork(current);
         }
 
+        /// <summary>仅服务器：复活后满血并写入 <see cref="_networkCurrent"/>（权威复活路径）。</summary>
+        public void ServerReviveAndSyncNetworkHealth()
+        {
+            if (!IsServer)
+                return;
+            _health.ReviveFull();
+            _networkCurrent.Value = _health.Current;
+        }
+
         /// <summary>本地 <see cref="PlayerDeathRespawn"/> 在 <see cref="Health.ReviveFull"/> 之后调用，使服务器血量与 NV 与客户端一致。</summary>
         public void NotifyLocalReviveAfterDeath()
         {

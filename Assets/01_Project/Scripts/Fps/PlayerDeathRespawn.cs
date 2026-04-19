@@ -2,6 +2,7 @@ using System.Collections;
 using FpsDemo.Combat;
 using FpsDemo.Match;
 using FpsDemo.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,7 +11,8 @@ namespace FpsDemo.Fps
     /// <summary>
     /// 玩家：死亡时灰幕、<see cref="FpsInput.GameplayInputEnabled"/> 关闭（仍可转视角）、关闭电机与武器；延迟后复活。
     /// 仅 <see cref="MatchParticipant.IsLocalPlayer"/> 或（无 MatchParticipant 时标签为 Player）会走本流程，避免误挂本脚本的单位死亡时全屏遮罩。
-    /// 复活位置使用场景中的 <see cref="MatchSpawnPoints"/>；未配置时可选用一个 <see cref="_fallbackRespawnPoint"/>。
+    /// 复活位置使用场景中的 <see cref="MatchSpawnPoints"/>；未在 Inspector 拖引用时会在运行时 <c>FindObjectOfType</c>。
+    /// 联机且存在 <see cref="PlayerRespawnNetBridge"/> 并已生成：延迟结束后由服务器选点、传送、满血与弹药同步，本机再通过 <see cref="FinishRespawnPresentationAfterServerAuthority"/> 恢复输入与表现。
     /// </summary>
     [RequireComponent(typeof(Health))]
     [RequireComponent(typeof(CharacterController))]
@@ -56,6 +58,18 @@ namespace FpsDemo.Fps
             _health.SetDestroyOnDeath(false);
 
             BuildDeathOverlay();
+        }
+
+        private void Start()
+        {
+            TryResolveMatchSpawnPoints();
+        }
+
+        private void TryResolveMatchSpawnPoints()
+        {
+            if (_matchSpawnPoints != null)
+                return;
+            _matchSpawnPoints = Object.FindObjectOfType<MatchSpawnPoints>();
         }
 
         private void OnDestroy()
@@ -118,6 +132,14 @@ namespace FpsDemo.Fps
                 yield break;
             }
 
+            if (ShouldUseServerAuthorityRespawn())
+            {
+                _respawnRoutine = null;
+                GetComponent<PlayerRespawnNetBridge>().RequestRespawnFromOwner();
+                yield break;
+            }
+
+            TryResolveMatchSpawnPoints();
             PickSpawnPosition(out Vector3 worldPos, out float? yawDegrees);
 
             _controller.enabled = false;
@@ -145,6 +167,20 @@ namespace FpsDemo.Fps
             if (_weapon != null)
                 _weapon.ResetAmmoToConfigDefaults();
 
+            FinishRespawnPresentationAfterServerAuthority();
+        }
+
+        private bool ShouldUseServerAuthorityRespawn()
+        {
+            var no = GetComponent<NetworkObject>();
+            var bridge = GetComponent<PlayerRespawnNetBridge>();
+            var nm = NetworkManager.Singleton;
+            return no != null && no.IsSpawned && bridge != null && nm != null && nm.IsListening;
+        }
+
+        /// <summary>联机：服务器完成传送/回血/弹药后由 <see cref="PlayerRespawnNetBridge"/> 的 ClientRpc 调用，仅恢复本地表现与输入。</summary>
+        public void FinishRespawnPresentationAfterServerAuthority()
+        {
             if (_motor != null)
             {
                 _motor.ResetStateForRespawn();
