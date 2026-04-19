@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using FpsDemo.Combat;
 using FpsDemo.Match;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,7 +11,8 @@ namespace FpsDemo.UI
     /// <summary>
     /// 死斗 HUD：顶栏剩余时间与击杀排行、右上击杀播报（最多 5 条）、左下玩家血量条。
     /// 挂在 Canvas 下空物体上，在 Inspector 拖引用；击杀条使用 <b>unscaled</b> 时间，与 <c>timeScale=0</c> 结算兼容。
-    /// 联机时本地玩家在 <see cref="Unity.Netcode.NetworkBehaviour.OnNetworkSpawn"/> 之后才标记为本地，需在 <see cref="Update"/> 中持续解析 <see cref="Health"/>。
+    /// 联机时本地玩家在 <see cref="NetworkBehaviour.OnNetworkSpawn"/> 之后才标记为本地，需在 <see cref="Update"/> 中持续解析 <see cref="Health"/>。
+    /// 联机击杀播报由 <see cref="FpsDemo.Netcode.NetworkKillFeedBroadcaster"/> 发 <see cref="ClientRpc"/>，调用 <see cref="AppendKillFeedFromNetwork"/>；单机仍订阅 <see cref="CombatKillBus"/>。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class DeathmatchHudView : MonoBehaviour
@@ -53,6 +55,9 @@ namespace FpsDemo.UI
         private readonly List<FeedEntry> _feed = new List<FeedEntry>(6);
         private MatchManager _resolvedMatch;
 
+        private static bool UseNetworkKillFeed =>
+            NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+
         private void Start()
         {
             _resolvedMatch = _matchManager != null ? _matchManager : MatchManager.Instance;
@@ -67,6 +72,15 @@ namespace FpsDemo.UI
         private void OnDisable()
         {
             CombatKillBus.KillCommitted -= OnKillCommitted;
+        }
+
+        /// <summary>联机：<see cref="FpsDemo.Netcode.NetworkKillFeedBroadcaster"/> 的 ClientRpc 调用；与单机总线共用插入逻辑。</summary>
+        public static void AppendKillFeedFromNetwork(string killerDisplayName, string victimDisplayName)
+        {
+            var hud = Object.FindObjectOfType<DeathmatchHudView>();
+            if (hud == null)
+                return;
+            hud.AppendKillFeedLine(killerDisplayName, victimDisplayName);
         }
 
         private void Update()
@@ -165,6 +179,14 @@ namespace FpsDemo.UI
 
         private void OnKillCommitted(KillReport report)
         {
+            if (UseNetworkKillFeed)
+                return;
+
+            AppendKillFeedLine(ResolveDisplayName(report.Killer), ResolveDisplayName(report.Victim), IsLocalInvolved(report));
+        }
+
+        private void AppendKillFeedLine(string killerDisplayName, string victimDisplayName, bool localPlayerInvolved)
+        {
             if (_killFeedLines == null || _killFeedLines.Length == 0)
                 return;
 
@@ -172,22 +194,34 @@ namespace FpsDemo.UI
             if (mm != null && mm.IsMatchOver)
                 return;
 
-            string kt = ResolveDisplayName(report.Killer);
-            string vt = ResolveDisplayName(report.Victim);
-            bool self = IsLocalInvolved(report);
-            Color c = self ? _killFeedSelfInvolvedColor : _killFeedNormalColor;
+            Color c = localPlayerInvolved ? _killFeedSelfInvolvedColor : _killFeedNormalColor;
 
             _feed.Insert(
                 0,
                 new FeedEntry
                 {
-                    Text = $"{kt}  →  {vt}",
+                    Text = $"{killerDisplayName}  →  {victimDisplayName}",
                     Color = c,
                     ExpireAtUnscaled = Time.unscaledTime + Mathf.Max(0.1f, _killFeedHoldSeconds),
                 });
 
             while (_feed.Count > _killFeedLines.Length)
                 _feed.RemoveAt(_feed.Count - 1);
+        }
+
+        private void AppendKillFeedLine(string killerDisplayName, string victimDisplayName)
+        {
+            TryResolvePlayerHealth();
+            bool self = IsLocalInvolvedByDisplayNames(killerDisplayName, victimDisplayName);
+            AppendKillFeedLine(killerDisplayName, victimDisplayName, self);
+        }
+
+        private bool IsLocalInvolvedByDisplayNames(string killerDisplayName, string victimDisplayName)
+        {
+            if (_localPlayerParticipant == null)
+                return false;
+            string me = _localPlayerParticipant.DisplayName;
+            return killerDisplayName == me || victimDisplayName == me;
         }
 
         private void RefreshKillFeedLines()
