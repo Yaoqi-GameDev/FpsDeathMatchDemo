@@ -146,10 +146,17 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 场景 | 用途 |
 |------|------|
-| `Assets/01_Project/Scenes/Lobby.unity` | **日后**：玩家名、匹配/网络、进房等大厅流程；**当前阶段**不承载玩法验证。 |
+| `Assets/01_Project/Scenes/Lobby.unity` | **大厅**：创建房间 / 加入 / 单机 / 设置（UI 用 **`LobbyMenuView`**）；**Build Settings 场景 0**；玩法仍在 DeathMatch。 |
 | `Assets/01_Project/Scenes/DeathMatch.unity` | **死斗与全部玩法**：移动、战斗、规则等均在本地于此场景开发与试玩。 |
 
 > 若场景职责有变更，请在本表与「变更记录」中同步更新。
+
+### Lobby 大厅 UI
+
+1. **Build Settings**：`File → Build Settings…` 将 **`Lobby`** 在列表**最上**（索引 **0**），**`DeathMatch`** 为 **1**（已配置时可跳过）。
+2. 打开 **`Lobby.unity`**，菜单 **`FpsDemo → Lobby → Build Or Refresh Lobby UI In Active Scene`**：在 **Canvas** 下生成 **`LobbyRoot`**（英文文案，避免字体缺字）与 **`SettingsPanel`**，并自动填好 **`LobbyMenuView`** 引用；**保存场景**（Ctrl+S）后层级会写进 `Lobby.unity`。
+3. 也可在 Hierarchy **手动**搭界面；**未**在 Inspector 拖引用时，可按与菜单相同的命名（如 `LobbyRoot/BtnCreateRoom`）由脚本 **`TryWireFromHierarchyIfNeeded`** 自动绑定。
+4. Play：Console 出现 **`[Lobby]`** 日志；后续在此接 **`NetworkManager`** / **`LoadScene`**。
 
 ---
 
@@ -170,6 +177,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-04-18 | **Lobby UI**：移除运行时生成；**`LobbyMenuUiBuilder`** 编辑器菜单在场景中搭建 **`LobbyRoot`** + 绑定 **`LobbyMenuView`**；**`LobbyMenuView`** 可选按层级命名自动引用 |
 | 2026-04-18 | **`NetworkKillFeedBroadcaster`**（场景物体 + **`NetworkObject`**）：服务器订阅 **`CombatKillBus`** → **`ClientRpc`** 播报；**`DeathmatchHudView`** 联机时忽略总线插入、用 **`AppendKillFeedFromNetwork`**（含 Host） |
 | 2026-04-18 | **`PlayerHitscanNetBridge`**（Player 根）：Owner **`ServerRpc`** 提交射线，**`FpsHitscanWeapon.ServerResolveShot`** 仅在服务器扣血；联机时本机再 **`Resolve(applyDamage:false)`** 做弹孔等表现；未联网或无桥接时武器行为同单机 |
 | 2026-04-18 | **`NetworkHealthBridge`**（Player 根）：服务器 `NetworkVariable` 同步血量，客户端 `Health.ApplyMirrorFromNetwork`；**`PlayerDeathRespawn`** 复活后 **`NotifyLocalReviveAfterDeath`**；**`DeathmatchHudView`** 每帧 **`TryResolvePlayerHealth`**；编辑器/Development 主机按 **F9** 仅 **`IsOwner`** 测扣血（避免 Host 上给全场玩家扣血） |

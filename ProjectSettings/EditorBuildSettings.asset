@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/01_Project/Scenes/Lobby.unity
+    guid: b1ac26f0f1b7c76459db21767455fb5f
+  - enabled: 1
     path: Assets/01_Project/Scenes/DeathMatch.unity
     guid: 46b81905543917345ba99583fb639519
   m_configObjects: {}
