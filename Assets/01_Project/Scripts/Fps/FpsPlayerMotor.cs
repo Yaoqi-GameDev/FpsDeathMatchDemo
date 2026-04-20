@@ -154,23 +154,37 @@ namespace FpsDemo.Fps
             if (!ShouldSimulateMotorPhysics())
                 return;
 
+            SimulationStep(in frame, Time.deltaTime);
+        }
+
+        /// <summary>
+        /// 联机客户端预测和解：用存档输入单步推进，与 <see cref="Update"/> 中物理分支一致；
+        /// <paramref name="dt"/> 应取该 tick 记录时的 <c>Time.deltaTime</c>。
+        /// </summary>
+        public void SimulationStep(in PlayerLocomotionInput frame, float dt)
+        {
+            if (!ShouldSimulateMotorPhysics())
+                return;
+
+            _lastFrame = frame;
+
             transform.Rotate(0f, frame.YawDelta, 0f, Space.World);
 
-            _slideCooldownLeft = Mathf.Max(0f, _slideCooldownLeft - Time.deltaTime);
+            _slideCooldownLeft = Mathf.Max(0f, _slideCooldownLeft - dt);
 
             if (_mode == MotorMode.Sliding)
             {
-                UpdateSliding(in frame);
+                UpdateSliding(in frame, dt);
                 return;
             }
 
             if (_mode == MotorMode.Ladder)
             {
-                UpdateLadder(in frame);
+                UpdateLadder(in frame, dt);
                 return;
             }
 
-            UpdateNormal(in frame);
+            UpdateNormal(in frame, dt);
         }
 
         /// <summary>
@@ -313,7 +327,7 @@ namespace FpsDemo.Fps
             }
         }
 
-        private void UpdateNormal(in PlayerLocomotionInput input)
+        private void UpdateNormal(in PlayerLocomotionInput input, float dt)
         {
             bool grounded = _controller.isGrounded;
             if (grounded && _velocity.y < 0f)
@@ -321,7 +335,7 @@ namespace FpsDemo.Fps
 
             if (grounded)
             {
-                _groundedTimer += Time.deltaTime;
+                _groundedTimer += dt;
                 if (_groundedTimer >= _groundedTimeToResetChain)
                     _jumpChainIndex = 0;
             }
@@ -338,7 +352,7 @@ namespace FpsDemo.Fps
             if (sprinting)
                 _sprintGraceTimer = _sprintSlideGraceSeconds;
             else
-                _sprintGraceTimer = Mathf.Max(0f, _sprintGraceTimer - Time.deltaTime);
+                _sprintGraceTimer = Mathf.Max(0f, _sprintGraceTimer - dt);
 
             bool slideEligible = sprinting || _sprintGraceTimer > 0f;
 
@@ -373,7 +387,7 @@ namespace FpsDemo.Fps
 
             Vector3 targetHorizontal = move * speed;
             Vector3 horizontal = new Vector3(_velocity.x, 0f, _velocity.z);
-            horizontal = Vector3.MoveTowards(horizontal, targetHorizontal, _acceleration * Time.deltaTime);
+            horizontal = Vector3.MoveTowards(horizontal, targetHorizontal, _acceleration * dt);
             _velocity.x = horizontal.x;
             _velocity.z = horizontal.z;
 
@@ -387,8 +401,8 @@ namespace FpsDemo.Fps
                 _jumpChainIndex++;
             }
 
-            _velocity.y += _gravity * Time.deltaTime;
-            _controller.Move(_velocity * Time.deltaTime);
+            _velocity.y += _gravity * dt;
+            _controller.Move(_velocity * dt);
         }
 
         private void StartSlide()
@@ -411,7 +425,7 @@ namespace FpsDemo.Fps
                 _velocity.y = -2f;
         }
 
-        private void UpdateSliding(in PlayerLocomotionInput input)
+        private void UpdateSliding(in PlayerLocomotionInput input, float dt)
         {
             if (input.JumpPressedThisFrame)
             {
@@ -422,19 +436,19 @@ namespace FpsDemo.Fps
                 _velocity.z = carry.z;
                 _velocity.y = _slideJumpUpVelocity;
                 _jumpChainIndex++;
-                _velocity.y += _gravity * Time.deltaTime;
-                _controller.Move(_velocity * Time.deltaTime);
+                _velocity.y += _gravity * dt;
+                _controller.Move(_velocity * dt);
                 return;
             }
 
-            _slideTimeLeft -= Time.deltaTime;
+            _slideTimeLeft -= dt;
 
             Vector3 horizontal = _slideDirHorizontal * _slideSpeed;
             _velocity.x = horizontal.x;
             _velocity.z = horizontal.z;
-            _velocity.y += _gravity * Time.deltaTime;
+            _velocity.y += _gravity * dt;
 
-            _controller.Move(_velocity * Time.deltaTime);
+            _controller.Move(_velocity * dt);
 
             if (_slideTimeLeft <= 0f)
             {
@@ -470,7 +484,7 @@ namespace FpsDemo.Fps
             }
         }
 
-        private void UpdateLadder(in PlayerLocomotionInput input)
+        private void UpdateLadder(in PlayerLocomotionInput input, float dt)
         {
             if (_activeLadder == null)
             {
@@ -488,7 +502,7 @@ namespace FpsDemo.Fps
             if (input.JumpPressedThisFrame)
             {
                 ExitLadder(jumpOff: true);
-                _controller.Move(_velocity * Time.deltaTime);
+                _controller.Move(_velocity * dt);
                 return;
             }
 
@@ -499,7 +513,7 @@ namespace FpsDemo.Fps
             Vector3 climb = up * (axes.y * _activeLadder.ClimbSpeed)
                 + right * (axes.x * _activeLadder.ClimbSpeed * _ladderStrafeMultiplier);
 
-            _controller.Move(climb * Time.deltaTime);
+            _controller.Move(climb * dt);
         }
 
         private void ApplyCapsuleForNormal(bool crouch)

@@ -7,12 +7,13 @@ namespace FpsDemo.Netcode
     /// <summary>
     /// Owner 每帧从 <see cref="FpsInputLocomotionSource"/> 取样并 <see cref="ServerRpc"/> 到服务器写入 <see cref="NetworkLocomotionBuffer"/>。
     /// 可选：<b>客户端预测</b> — 纯客户端 Owner 本地跑 <see cref="FpsPlayerMotor"/>，并关闭本机 <c>NetworkTransform</c> 接收；
-    /// 服务器同步权威位置/速度/身体水平朝向/tick，Owner 按误差分级：忽略 / 平滑 / 仅运动学校正 / 硬重置；位置在「忽略」档时仍可单独软校正 Yaw。
+    /// 服务器同步权威位置/速度/身体水平朝向/tick；纯客户端 Owner 用 <see cref="ClientLocomotionInputHistory"/> 在 <see cref="LateUpdate"/> 内从权威 tick 起 <see cref="FpsPlayerMotor.SimulationStep"/> 重放；缺帧或无法重放时回退为忽略 / 平滑 / 运动学 / 硬重置；位置在「忽略」档时仍可单独软校正 Yaw。
     /// </summary>
     [DefaultExecutionOrder(-10)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(NetworkObject))]
     [RequireComponent(typeof(NetworkLocomotionBuffer))]
+    [RequireComponent(typeof(ClientLocomotionInputHistory))]
     public sealed class PlayerLocomotionNetBridge : NetworkBehaviour
     {
         [Header("客户端预测（仅纯客户端 Owner）")]
@@ -44,6 +45,7 @@ namespace FpsDemo.Netcode
 
         [SerializeField] private NetworkLocomotionBuffer _buffer;
         [SerializeField] private FpsPlayerMotor _motor;
+        [SerializeField] private ClientLocomotionInputHistory _inputHistory;
 
         private uint _nextClientTick = 1;
 
@@ -98,6 +100,8 @@ namespace FpsDemo.Netcode
                 _buffer = GetComponent<NetworkLocomotionBuffer>();
             if (_motor == null)
                 _motor = GetComponent<FpsPlayerMotor>();
+            if (_inputHistory == null)
+                _inputHistory = GetComponent<ClientLocomotionInputHistory>();
             _localSource = GetComponent<FpsInputLocomotionSource>();
         }
 
@@ -148,6 +152,9 @@ namespace FpsDemo.Netcode
                 return;
 
             uint tick = _nextClientTick++;
+            float dt = Time.deltaTime;
+            if (_inputHistory != null)
+                _inputHistory.Store(tick, in frame, dt);
 
             SubmitLocomotionServerRpc(
                 tick,
@@ -194,6 +201,29 @@ namespace FpsDemo.Netcode
             Vector3 authPos = new Vector3(_authorityPosX.Value, _authorityPosY.Value, _authorityPosZ.Value);
             Vector3 authVel = new Vector3(_authorityVelX.Value, _authorityVelY.Value, _authorityVelZ.Value);
             float authYaw = _authorityBodyYawY.Value;
+
+            uint serverTick = _serverAuthorityTick.Value;
+            uint lastTick = _nextClientTick - 1;
+
+            if (lastTick < serverTick)
+            {
+                _motor.ApplyAuthoritativeHardResync(authPos, authVel, authYaw);
+                return;
+            }
+
+            if (_inputHistory != null
+                && lastTick > serverTick
+                && _inputHistory.CanReplayRange(serverTick + 1, lastTick))
+            {
+                _motor.ApplyAuthoritativeKinematics(authPos, authVel, authYaw);
+                for (uint t = serverTick + 1; t <= lastTick; t++)
+                {
+                    _inputHistory.TryGet(t, out var input, out float stepDt);
+                    _motor.SimulationStep(in input, stepDt);
+                }
+
+                return;
+            }
 
             float err = Vector3.Distance(transform.position, authPos);
             float yawErrDeg = Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, authYaw));
