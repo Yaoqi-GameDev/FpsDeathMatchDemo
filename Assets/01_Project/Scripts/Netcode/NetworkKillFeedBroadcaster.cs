@@ -22,6 +22,10 @@ namespace FpsDemo.Netcode
             string killer = ResolveDisplayName(report.Killer);
             string victim = ResolveDisplayName(report.Victim);
             BroadcastKillFeedClientRpc(killer, victim);
+
+            if (report.Killer != null &&
+                report.Killer.TryGetComponent<NetworkKillLocalSync>(out var localSync))
+                localSync.ServerNotifyLocalKillFeedbackForOwner(report);
         }
 
         public override void OnNetworkSpawn()

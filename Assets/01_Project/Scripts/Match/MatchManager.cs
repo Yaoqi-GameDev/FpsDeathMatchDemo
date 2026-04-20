@@ -166,6 +166,10 @@ namespace FpsDemo.Match
             if (_state != MatchState.Running)
                 return;
 
+            var nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening && !nm.IsServer)
+                return;
+
             if (report.Killer == null)
                 return;
 
