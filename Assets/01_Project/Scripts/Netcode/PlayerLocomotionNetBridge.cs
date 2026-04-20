@@ -7,7 +7,7 @@ namespace FpsDemo.Netcode
     /// <summary>
     /// Owner 每帧从 <see cref="FpsInputLocomotionSource"/> 取样并 <see cref="ServerRpc"/> 到服务器写入 <see cref="NetworkLocomotionBuffer"/>。
     /// 可选：<b>客户端预测</b> — 纯客户端 Owner 本地跑 <see cref="FpsPlayerMotor"/>，并关闭本机 <c>NetworkTransform</c> 接收；
-    /// 服务器同步权威位置/速度/tick，Owner 按误差分级：忽略 / 平滑 / 仅运动学校正 / 硬重置。
+    /// 服务器同步权威位置/速度/身体水平朝向/tick，Owner 按误差分级：忽略 / 平滑 / 仅运动学校正 / 硬重置；位置在「忽略」档时仍可单独软校正 Yaw。
     /// </summary>
     [DefaultExecutionOrder(-10)]
     [DisallowMultipleComponent]
@@ -34,6 +34,13 @@ namespace FpsDemo.Netcode
 
         [Tooltip("软跟时，速度朝权威速度插值的系数。")]
         [SerializeField] private float _blendVelocitySharpness = 8f;
+
+        [Header("校正分级：身体水平朝向（度 / 纯客户端 Owner）")]
+        [Tooltip("位置差在「忽略」档内时：若与权威朝向差仍大于该值，则单独软校正 Yaw。")]
+        [SerializeField] private float _yawIgnoreBelowDeg = 0.35f;
+
+        [Tooltip("软跟权威朝向时的指数系数（与位置软跟同思路）。")]
+        [SerializeField] private float _blendYawSharpness = 10f;
 
         [SerializeField] private NetworkLocomotionBuffer _buffer;
         [SerializeField] private FpsPlayerMotor _motor;
@@ -75,6 +82,11 @@ namespace FpsDemo.Netcode
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
 
+        private readonly NetworkVariable<float> _authorityBodyYawY = new NetworkVariable<float>(
+            0f,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
         private bool _disabledNetworkTransformForPrediction;
         private FpsInputLocomotionSource _localSource;
 
@@ -108,6 +120,7 @@ namespace FpsDemo.Netcode
                     _authorityVelZ.Value = v.z;
                 }
 
+                _authorityBodyYawY.Value = transform.eulerAngles.y;
                 _serverAuthorityTick.Value = 0;
             }
         }
@@ -168,6 +181,7 @@ namespace FpsDemo.Netcode
                     _authorityVelZ.Value = v.z;
                 }
 
+                _authorityBodyYawY.Value = transform.eulerAngles.y;
                 _serverAuthorityTick.Value = _buffer.LastAppliedClientTick;
                 return;
             }
@@ -179,35 +193,48 @@ namespace FpsDemo.Netcode
 
             Vector3 authPos = new Vector3(_authorityPosX.Value, _authorityPosY.Value, _authorityPosZ.Value);
             Vector3 authVel = new Vector3(_authorityVelX.Value, _authorityVelY.Value, _authorityVelZ.Value);
+            float authYaw = _authorityBodyYawY.Value;
 
             float err = Vector3.Distance(transform.position, authPos);
+            float yawErrDeg = Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, authYaw));
 
             float ign = Mathf.Max(0.001f, _reconcileIgnoreBelow);
             float blendEnd = Mathf.Max(ign + 0.001f, _reconcileBlendUntil);
             float hard = Mathf.Max(blendEnd + 0.001f, _reconcileHardResetAbove);
-
-            if (err <= ign)
-                return;
+            float yawIgn = Mathf.Max(0.001f, _yawIgnoreBelowDeg);
 
             float dt = Time.deltaTime;
 
-            if (err <= blendEnd)
+            if (err > ign)
             {
-                float tPos = 1f - Mathf.Exp(-_blendPositionSharpness * dt);
-                float tVel = 1f - Mathf.Exp(-_blendVelocitySharpness * dt);
-                Vector3 pos = Vector3.Lerp(transform.position, authPos, tPos);
-                Vector3 vel = Vector3.Lerp(_motor.LocomotionVelocity, authVel, tVel);
-                _motor.ApplyAuthoritativeKinematics(pos, vel);
+                if (err <= blendEnd)
+                {
+                    float tPos = 1f - Mathf.Exp(-_blendPositionSharpness * dt);
+                    float tVel = 1f - Mathf.Exp(-_blendVelocitySharpness * dt);
+                    float tYaw = 1f - Mathf.Exp(-_blendYawSharpness * dt);
+                    Vector3 pos = Vector3.Lerp(transform.position, authPos, tPos);
+                    Vector3 vel = Vector3.Lerp(_motor.LocomotionVelocity, authVel, tVel);
+                    float y = Mathf.LerpAngle(transform.eulerAngles.y, authYaw, tYaw);
+                    _motor.ApplyAuthoritativeKinematics(pos, vel, y);
+                    return;
+                }
+
+                if (err <= hard)
+                {
+                    _motor.ApplyAuthoritativeKinematics(authPos, authVel, authYaw);
+                    return;
+                }
+
+                _motor.ApplyAuthoritativeHardResync(authPos, authVel, authYaw);
                 return;
             }
 
-            if (err <= hard)
+            if (yawErrDeg > yawIgn)
             {
-                _motor.ApplyAuthoritativeKinematics(authPos, authVel);
-                return;
+                float tYaw = 1f - Mathf.Exp(-_blendYawSharpness * dt);
+                float y = Mathf.LerpAngle(transform.eulerAngles.y, authYaw, tYaw);
+                _motor.ApplyAuthoritativeBodyYaw(y);
             }
-
-            _motor.ApplyAuthoritativeHardResync(authPos, authVel);
         }
 
         [ServerRpc(RequireOwnership = true)]

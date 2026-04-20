@@ -536,14 +536,24 @@ namespace FpsDemo.Fps
         public Vector3 LocomotionVelocity => _velocity;
 
         /// <summary>
+        /// 仅校正身体水平朝向（世界 Y），保留 X/Z 欧拉角，避免动到相机俯仰等子物体旋转。
+        /// </summary>
+        public void ApplyAuthoritativeBodyYaw(float worldYawY)
+        {
+            Vector3 e = transform.eulerAngles;
+            transform.rotation = Quaternion.Euler(e.x, worldYawY, e.z);
+        }
+
+        /// <summary>
         /// 联机客户端预测：用服务器权威位置与速度对齐，<strong>不</strong>重置滑铲/梯子模式（减少橡皮筋）。
         /// </summary>
-        public void ApplyAuthoritativeKinematics(Vector3 worldPosition, Vector3 velocity)
+        public void ApplyAuthoritativeKinematics(Vector3 worldPosition, Vector3 velocity, float worldBodyYawY)
         {
             if (_controller == null)
             {
                 transform.position = worldPosition;
                 _velocity = velocity;
+                ApplyAuthoritativeBodyYaw(worldBodyYawY);
                 return;
             }
 
@@ -551,10 +561,11 @@ namespace FpsDemo.Fps
             transform.position = worldPosition;
             _controller.enabled = true;
             _velocity = velocity;
+            ApplyAuthoritativeBodyYaw(worldBodyYawY);
         }
 
         /// <summary>偏差过大：重置滑铲/梯子等到安全状态后再写入权威速度。</summary>
-        public void ApplyAuthoritativeHardResync(Vector3 worldPosition, Vector3 velocity)
+        public void ApplyAuthoritativeHardResync(Vector3 worldPosition, Vector3 velocity, float worldBodyYawY)
         {
             if (_controller != null)
                 _controller.enabled = false;
@@ -563,6 +574,7 @@ namespace FpsDemo.Fps
                 _controller.enabled = true;
             ResetStateForRespawn();
             _velocity = velocity;
+            ApplyAuthoritativeBodyYaw(worldBodyYawY);
         }
 
         /// <summary>复活后重置速度、滑铲/梯子状态与站立胶囊。</summary>
