@@ -532,6 +532,39 @@ namespace FpsDemo.Fps
             _cameraPivot.localPosition = lp;
         }
 
+        /// <summary>联机预测校正：当前电机速度（CharacterController 使用的位移速度）。</summary>
+        public Vector3 LocomotionVelocity => _velocity;
+
+        /// <summary>
+        /// 联机客户端预测：用服务器权威位置与速度对齐，<strong>不</strong>重置滑铲/梯子模式（减少橡皮筋）。
+        /// </summary>
+        public void ApplyAuthoritativeKinematics(Vector3 worldPosition, Vector3 velocity)
+        {
+            if (_controller == null)
+            {
+                transform.position = worldPosition;
+                _velocity = velocity;
+                return;
+            }
+
+            _controller.enabled = false;
+            transform.position = worldPosition;
+            _controller.enabled = true;
+            _velocity = velocity;
+        }
+
+        /// <summary>偏差过大：重置滑铲/梯子等到安全状态后再写入权威速度。</summary>
+        public void ApplyAuthoritativeHardResync(Vector3 worldPosition, Vector3 velocity)
+        {
+            if (_controller != null)
+                _controller.enabled = false;
+            transform.position = worldPosition;
+            if (_controller != null)
+                _controller.enabled = true;
+            ResetStateForRespawn();
+            _velocity = velocity;
+        }
+
         /// <summary>复活后重置速度、滑铲/梯子状态与站立胶囊。</summary>
         public void ResetStateForRespawn()
         {

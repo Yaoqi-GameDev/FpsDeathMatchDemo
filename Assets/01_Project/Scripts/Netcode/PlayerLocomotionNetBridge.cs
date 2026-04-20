@@ -6,8 +6,8 @@ namespace FpsDemo.Netcode
 {
     /// <summary>
     /// Owner 每帧从 <see cref="FpsInputLocomotionSource"/> 取样并 <see cref="ServerRpc"/> 到服务器写入 <see cref="NetworkLocomotionBuffer"/>。
-    /// 可选：<b>客户端预测</b> — 纯客户端 Owner 本地跑 <see cref="FpsPlayerMotor"/>，并关闭本机 <c>NetworkTransform</c> 接收，避免被服务器位置覆盖；
-    /// 服务器每帧写入权威位置/tick，Owner 偏差过大时拉回（最小校正）。
+    /// 可选：<b>客户端预测</b> — 纯客户端 Owner 本地跑 <see cref="FpsPlayerMotor"/>，并关闭本机 <c>NetworkTransform</c> 接收；
+    /// 服务器同步权威位置/速度/tick，Owner 按误差分级：忽略 / 平滑 / 仅运动学校正 / 硬重置。
     /// </summary>
     [DefaultExecutionOrder(-10)]
     [DisallowMultipleComponent]
@@ -19,8 +19,21 @@ namespace FpsDemo.Netcode
         [Tooltip("开启后 Owner 客户端本地 CharacterController 与服务器同逻辑移动；Host 仍为纯服务器模拟。")]
         [SerializeField] private bool _clientPrediction = true;
 
-        [Tooltip("预测位置与服务器权威位置超过该距离（米）时拉回。")]
-        [SerializeField] private float _reconcilePositionThreshold = 0.75f;
+        [Header("校正分级（米 / 纯客户端 Owner）")]
+        [Tooltip("小于该距离差：不校正。")]
+        [SerializeField] private float _reconcileIgnoreBelow = 0.06f;
+
+        [Tooltip("在 (忽略, 本值] 内：每帧向权威位置/速度插值（软跟）。")]
+        [SerializeField] private float _reconcileBlendUntil = 0.32f;
+
+        [Tooltip("大于该距离：硬同步并重置滑铲/梯子等到安全状态（橡皮筋最明显时触发）。")]
+        [SerializeField] private float _reconcileHardResetAbove = 0.85f;
+
+        [Tooltip("软跟时，每帧朝权威位置插值的系数（越大跟得越紧）。")]
+        [SerializeField] private float _blendPositionSharpness = 10f;
+
+        [Tooltip("软跟时，速度朝权威速度插值的系数。")]
+        [SerializeField] private float _blendVelocitySharpness = 8f;
 
         [SerializeField] private NetworkLocomotionBuffer _buffer;
         [SerializeField] private FpsPlayerMotor _motor;
@@ -47,7 +60,21 @@ namespace FpsDemo.Netcode
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
 
-        private CharacterController _characterController;
+        private readonly NetworkVariable<float> _authorityVelX = new NetworkVariable<float>(
+            0f,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<float> _authorityVelY = new NetworkVariable<float>(
+            0f,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<float> _authorityVelZ = new NetworkVariable<float>(
+            0f,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
         private bool _disabledNetworkTransformForPrediction;
         private FpsInputLocomotionSource _localSource;
 
@@ -59,7 +86,6 @@ namespace FpsDemo.Netcode
                 _buffer = GetComponent<NetworkLocomotionBuffer>();
             if (_motor == null)
                 _motor = GetComponent<FpsPlayerMotor>();
-            _characterController = GetComponent<CharacterController>();
             _localSource = GetComponent<FpsInputLocomotionSource>();
         }
 
@@ -74,6 +100,14 @@ namespace FpsDemo.Netcode
                 _authorityPosX.Value = p.x;
                 _authorityPosY.Value = p.y;
                 _authorityPosZ.Value = p.z;
+                if (_motor != null)
+                {
+                    Vector3 v = _motor.LocomotionVelocity;
+                    _authorityVelX.Value = v.x;
+                    _authorityVelY.Value = v.y;
+                    _authorityVelZ.Value = v.z;
+                }
+
                 _serverAuthorityTick.Value = 0;
             }
         }
@@ -126,27 +160,54 @@ namespace FpsDemo.Netcode
                 _authorityPosX.Value = p.x;
                 _authorityPosY.Value = p.y;
                 _authorityPosZ.Value = p.z;
+                if (_motor != null)
+                {
+                    Vector3 v = _motor.LocomotionVelocity;
+                    _authorityVelX.Value = v.x;
+                    _authorityVelY.Value = v.y;
+                    _authorityVelZ.Value = v.z;
+                }
+
                 _serverAuthorityTick.Value = _buffer.LastAppliedClientTick;
                 return;
             }
 
-            if (!IsOwner || !_clientPrediction || !_disabledNetworkTransformForPrediction)
+            if (!IsOwner || !_clientPrediction || !_disabledNetworkTransformForPrediction || _motor == null)
                 return;
             if (_serverAuthorityTick.Value == 0)
                 return;
 
-            Vector3 auth = new Vector3(_authorityPosX.Value, _authorityPosY.Value, _authorityPosZ.Value);
-            float thr = Mathf.Max(0.05f, _reconcilePositionThreshold);
-            if ((transform.position - auth).sqrMagnitude <= thr * thr)
+            Vector3 authPos = new Vector3(_authorityPosX.Value, _authorityPosY.Value, _authorityPosZ.Value);
+            Vector3 authVel = new Vector3(_authorityVelX.Value, _authorityVelY.Value, _authorityVelZ.Value);
+
+            float err = Vector3.Distance(transform.position, authPos);
+
+            float ign = Mathf.Max(0.001f, _reconcileIgnoreBelow);
+            float blendEnd = Mathf.Max(ign + 0.001f, _reconcileBlendUntil);
+            float hard = Mathf.Max(blendEnd + 0.001f, _reconcileHardResetAbove);
+
+            if (err <= ign)
                 return;
 
-            if (_characterController != null)
-                _characterController.enabled = false;
-            transform.position = auth;
-            if (_characterController != null)
-                _characterController.enabled = true;
+            float dt = Time.deltaTime;
 
-            _motor?.ResetStateForRespawn();
+            if (err <= blendEnd)
+            {
+                float tPos = 1f - Mathf.Exp(-_blendPositionSharpness * dt);
+                float tVel = 1f - Mathf.Exp(-_blendVelocitySharpness * dt);
+                Vector3 pos = Vector3.Lerp(transform.position, authPos, tPos);
+                Vector3 vel = Vector3.Lerp(_motor.LocomotionVelocity, authVel, tVel);
+                _motor.ApplyAuthoritativeKinematics(pos, vel);
+                return;
+            }
+
+            if (err <= hard)
+            {
+                _motor.ApplyAuthoritativeKinematics(authPos, authVel);
+                return;
+            }
+
+            _motor.ApplyAuthoritativeHardResync(authPos, authVel);
         }
 
         [ServerRpc(RequireOwnership = true)]
