@@ -11,9 +11,13 @@ namespace FpsDemo.Netcode
     {
         private PlayerLocomotionInput _frame;
 
+        /// <summary>服务器上一帧从 RPC 写入的 <see cref="PlayerLocomotionInput.ClientTick"/>。</summary>
+        public uint LastAppliedClientTick { get; private set; }
+
         public void ApplyServerFrame(in PlayerLocomotionInput frame)
         {
             _frame = frame;
+            LastAppliedClientTick = frame.ClientTick;
         }
 
         public bool TryGetFrame(out PlayerLocomotionInput frame)

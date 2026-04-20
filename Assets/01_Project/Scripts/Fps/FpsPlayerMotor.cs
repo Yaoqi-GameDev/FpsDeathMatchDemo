@@ -85,6 +85,8 @@ namespace FpsDemo.Fps
         private FpsLadder _ladderInRange;
         private FpsLadder _activeLadder;
 
+        private PlayerLocomotionNetBridge _locomotionBridge;
+
         /// <summary>松 Shift 后倒计时；按住 Shift 时重置为满。</summary>
         private float _sprintGraceTimer;
 
@@ -130,6 +132,7 @@ namespace FpsDemo.Fps
             _controller = GetComponent<CharacterController>();
             if (_localLocomotionSource == null)
                 _localLocomotionSource = GetComponent<FpsInputLocomotionSource>();
+            _locomotionBridge = GetComponent<PlayerLocomotionNetBridge>();
         }
 
         private void Start()
@@ -170,13 +173,18 @@ namespace FpsDemo.Fps
             UpdateNormal(in frame);
         }
 
-        /// <summary>仅服务器（含 Host）跑 <see cref="CharacterController"/>；Owner 客户端只更新 <see cref="_lastFrame"/> 供手臂动画等。</summary>
+        /// <summary>
+        /// 服务器（含 Host）跑权威 <see cref="CharacterController"/>；纯客户端 Owner 在开启预测时同样本地模拟。
+        /// 未开启预测时 Owner 客户端只更新 <see cref="_lastFrame"/> / 相机高度供手臂动画等。
+        /// </summary>
         private bool ShouldSimulateMotorPhysics()
         {
             var no = GetComponent<NetworkObject>();
             if (no == null || !no.IsSpawned)
                 return true;
-            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+                return true;
+            return _locomotionBridge != null && _locomotionBridge.ClientPredictionEnabled && no.IsOwner;
         }
 
         /// <summary>联机纯客户端 Owner：本地不跑物理，但仍需根据输入更新第一人称相机高度（蹲/站），与服务器 <see cref="ApplyCapsuleForNormal"/> 判定一致。</summary>
@@ -254,9 +262,14 @@ namespace FpsDemo.Fps
         private ILocomotionInputSource ResolveLocomotionSource()
         {
             var netObj = GetComponent<NetworkObject>();
-            if (_networkBuffer != null && netObj != null && netObj.IsSpawned
-                && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+            var nm = NetworkManager.Singleton;
+            if (_networkBuffer != null && netObj != null && netObj.IsSpawned && nm != null && nm.IsServer)
                 return _networkBuffer;
+
+            if (_locomotionBridge != null && _locomotionBridge.ClientPredictionEnabled
+                && netObj != null && netObj.IsSpawned && nm != null && !nm.IsServer && netObj.IsOwner)
+                return _localLocomotionSource;
+
             return _localLocomotionSource;
         }
 

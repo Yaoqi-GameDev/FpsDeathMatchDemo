@@ -40,7 +40,10 @@ namespace FpsDemo.Netcode
                 motor.enabled = IsServer || owner;
 
             if (TryGetComponent<CharacterController>(out var characterController))
-                characterController.enabled = IsServer;
+            {
+                bool clientPredict = TryGetComponent<PlayerLocomotionNetBridge>(out var plb) && plb.ClientPredictionEnabled;
+                characterController.enabled = IsServer || (owner && clientPredict);
+            }
 
             if (TryGetComponent<FpsHitscanWeapon>(out var weapon))
                 weapon.enabled = owner;

@@ -32,6 +32,7 @@ namespace FpsDemo.Fps
             frame.CrouchHeld = _input.CrouchHeld;
             frame.CrouchPressedThisFrame = _input.CrouchPressedThisFrame;
             frame.InteractPressedThisFrame = _input.InteractPressedThisFrame;
+            frame.ClientTick = 0;
             return true;
         }
     }

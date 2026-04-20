@@ -17,5 +17,8 @@ namespace FpsDemo.Fps
         public bool CrouchHeld;
         public bool CrouchPressedThisFrame;
         public bool InteractPressedThisFrame;
+
+        /// <summary>联机客户端递增；单机恒为 0。用于预测与服务器状态对齐。</summary>
+        public uint ClientTick;
     }
 }

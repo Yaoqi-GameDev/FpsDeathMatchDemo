@@ -191,6 +191,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 | 2026-04-18 | **`KillStreakTracker.Local`**：联机在 **`OnNetworkSpawn`** 后由 **`MatchParticipant.SetLocalPlayerForNetworking`** 再赋值（**`Awake`** 时 Inspector 往往尚未标为本地玩家） |
 | 2026-04-18 | **再来一局（位置/状态）**：NGO 重载同一场景时玩家常不再次 **`OnNetworkSpawn`**，**`NetMatchManager`** 在 **`NetworkSceneManager.OnLoadEventCompleted`**（及 **`MatchManager.Start`** 兜底）对全体连接玩家执行 **`PlayerRespawnNetBridge.ServerApplyFullMatchRoundReset`**（传送、击杀 NV 清零、满血、弹药、Owner 收尾） |
 | 2026-04-18 | **联机击杀音效（连杀）**：击杀总线仅在服务器触发；**`NetworkKillLocalSync`**（Player）对凶手 Owner **`ClientRpc`** 补发本地 **`CombatKillBus`**；**`MatchManager`** 记分仅在 **`IsServer`**，避免客户端补发双计 |
+| 2026-04-18 | **客户端移动预测（最小）**：**`PlayerLocomotionNetBridge`** 发输入带 **`ClientTick`**；服务器 **`NetworkVariable`** 同步权威位置与 tick；纯客户端 Owner 关闭 **`NetworkTransform`**、启用 **`CharacterController`** 本地跑 **`FpsPlayerMotor`**；偏差超阈值 **`ResetStateForRespawn`** 对齐（可调 **Reconcile Position Threshold**） |
 | 2026-04-08 | **`FpsThirdPersonLocomotionAnimator`**：**`IsGrounded`** / **`VerticalSpeed`**；**`FpsPlayerMotor`**：**`VerticalVelocity`**；**`speed`** / **`IsCrouch`** / **`IsAiming`** 同前；**Third Person Root** 隐藏网格 |
 | 2026-04-08 | **`FpsAdsWorldFov`**：主相机开镜 **FOV** 平滑过渡（**`FpsInput.AimHeld`**）；**`Hip Fov`=0** 时 **Start** 读取当前相机；勿挂手臂相机 |
 | 2026-04-08 | **`FpsWeaponViewModelAnimator`**：**`Aiming`** 默认脚本插值（**`Smooth Aiming Parameter`**），避免混合树单帧 0/1 硬切；可调 **Blend In/Out Speed** |

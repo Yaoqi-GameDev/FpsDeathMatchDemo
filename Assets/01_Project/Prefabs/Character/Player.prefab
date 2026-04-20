@@ -4861,8 +4861,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 215f13dc9fd238242a9811a1421916e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _localSource: {fileID: 0}
+  _clientPrediction: 1
+  _reconcilePositionThreshold: 1
   _buffer: {fileID: 0}
+  _motor: {fileID: 0}
 --- !u!114 &3132716042833844477
 MonoBehaviour:
   m_ObjectHideFlags: 0
