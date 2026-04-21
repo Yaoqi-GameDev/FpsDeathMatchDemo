@@ -7,7 +7,7 @@ namespace FpsDemo.Fps
     /// <summary>
     /// 第一人称移动：走路、蹲、疾跑、滑铲、梯子、跳跃与连跳惩罚。
     /// 输入只来自 <see cref="ILocomotionInputSource"/>（单机：<see cref="FpsInputLocomotionSource"/>；联机服务器：<see cref="NetworkLocomotionBuffer"/>）。
-    /// 水平转角由本组件在每帧开始施加 <see cref="PlayerLocomotionInput.YawDelta"/>（原 <see cref="FpsPlayerLook"/> 的身体 yaw 已迁入此处）。
+    /// 水平转角：每步先按 <see cref="PlayerLocomotionInput.BodyYawY"/> 对齐世界 Y，再施加 <see cref="PlayerLocomotionInput.YawDelta"/>（联机与服务器共用同一参考）。
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(FpsInputLocomotionSource))]
@@ -168,6 +168,8 @@ namespace FpsDemo.Fps
 
             _lastFrame = frame;
 
+            Vector3 euler = transform.eulerAngles;
+            transform.rotation = Quaternion.Euler(euler.x, frame.BodyYawY, euler.z);
             transform.Rotate(0f, frame.YawDelta, 0f, Space.World);
 
             _slideCooldownLeft = Mathf.Max(0f, _slideCooldownLeft - dt);

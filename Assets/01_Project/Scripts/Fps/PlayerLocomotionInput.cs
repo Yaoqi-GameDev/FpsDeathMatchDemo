@@ -8,6 +8,12 @@ namespace FpsDemo.Fps
     /// </summary>
     public struct PlayerLocomotionInput
     {
+        /// <summary>
+        /// 本步 <see cref="YawDelta"/> 施加前，身体绕世界 Y 的欧拉角（度）。
+        /// 与联机包一并发往服务器，使服务器与本帧移动使用同一水平参考，减少仅靠增量积分带来的偏差。
+        /// </summary>
+        public float BodyYawY;
+
         public float YawDelta;
         public Vector2 MoveAxes;
         public bool SprintHeld;

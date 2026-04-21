@@ -177,6 +177,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-04-18 | **联机移动阶段一**：**`PlayerLocomotionInput.BodyYawY`**（本步 `YawDelta` 前身体世界 Y 角）经 **`SubmitLocomotionServerRpc`** 发往服务器；**`FpsPlayerMotor.SimulationStep`** 先对齐 **`BodyYawY`** 再 **`Rotate(YawDelta)`**，与客户端采样顺序一致，减轻仅靠增量积分导致的朝向漂移 |
 | 2026-04-18 | **Hitscan 基础延迟补偿**：**`MatchLagCompensationService`**（Host **`Start`** 挂在 **`MatchManager`** 上；**`LateUpdate`**、`DefaultExecutionOrder(80)` 采样 **`MatchParticipant`** 根位姿环形缓冲）；**`HitscanLagCompensationResolver`** 判伤前临时回溯目标 **`Time.timeAsDouble - rewind`** 再 **`HitscanShotResolver.Resolve`**；**`PlayerHitscanNetBridge`** Inspector **`_lagCompensationRewindSeconds`**（默认 0.1）；无服务或失败则回退无回溯 |
 | 2026-04-18 | **Lobby UI**：移除运行时生成；**`LobbyMenuUiBuilder`** 编辑器菜单在场景中搭建 **`LobbyRoot`** + 绑定 **`LobbyMenuView`**；**`LobbyMenuView`** 可选按层级命名自动引用 |
 | 2026-04-18 | **`NetworkKillFeedBroadcaster`**（场景物体 + **`NetworkObject`**）：服务器订阅 **`CombatKillBus`** → **`ClientRpc`** 播报；**`DeathmatchHudView`** 联机时忽略总线插入、用 **`AppendKillFeedFromNetwork`**（含 Host） |

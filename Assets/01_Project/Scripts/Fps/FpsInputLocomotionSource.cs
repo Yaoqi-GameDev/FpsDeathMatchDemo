@@ -24,6 +24,8 @@ namespace FpsDemo.Fps
                 return false;
 
             frame.YawDelta = _input.LookDelta.x;
+            // 早于本帧 FpsPlayerMotor.SimulationStep 采样，与服务器「先对齐 BodyYawY 再 Rotate(YawDelta)」一致。
+            frame.BodyYawY = transform.eulerAngles.y;
             frame.MoveAxes = _input.MoveAxes;
             frame.SprintHeld = _input.SprintHeld;
             frame.JumpPressedThisFrame = _input.JumpPressedThisFrame;

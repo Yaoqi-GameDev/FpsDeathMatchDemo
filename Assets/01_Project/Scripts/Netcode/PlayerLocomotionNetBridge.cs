@@ -158,6 +158,7 @@ namespace FpsDemo.Netcode
 
             SubmitLocomotionServerRpc(
                 tick,
+                frame.BodyYawY,
                 frame.YawDelta,
                 frame.MoveAxes,
                 frame.SprintHeld,
@@ -270,6 +271,7 @@ namespace FpsDemo.Netcode
         [ServerRpc(RequireOwnership = true)]
         private void SubmitLocomotionServerRpc(
             uint clientTick,
+            float bodyYawY,
             float yawDelta,
             Vector2 moveAxes,
             bool sprintHeld,
@@ -283,6 +285,7 @@ namespace FpsDemo.Netcode
             _buffer.ApplyServerFrame(new PlayerLocomotionInput
             {
                 ClientTick = clientTick,
+                BodyYawY = bodyYawY,
                 YawDelta = yawDelta,
                 MoveAxes = moveAxes,
                 SprintHeld = sprintHeld,
