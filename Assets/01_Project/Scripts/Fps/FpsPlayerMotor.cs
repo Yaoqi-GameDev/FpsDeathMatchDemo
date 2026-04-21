@@ -25,8 +25,8 @@ namespace FpsDemo.Fps
         [SerializeField] private Transform _cameraPivot;
 
         [Header("走路 / 疾跑")]
-        [SerializeField] private float _walkSpeed = 4.5f;
-        [SerializeField] private float _sprintSpeed = 8f;
+        [SerializeField] private float _walkSpeed = 4f;
+        [SerializeField] private float _sprintSpeed = 7f;
         [Tooltip("开镜（AimHeld）时视为非疾跑：目标速度为走路，且不参与疾跑宽限/滑铲条件中的「疾跑」；第三人称 Animator 的 speed 会随实际水平速度落在走路区间。")]
         [SerializeField] private bool _limitSpeedToWalkWhileAiming = true;
         [Tooltip("按住开火（FireHeld）时同样视为非疾跑，与开镜限制一致。")]

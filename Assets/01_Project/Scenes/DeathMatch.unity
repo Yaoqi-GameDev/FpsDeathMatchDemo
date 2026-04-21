@@ -10324,7 +10324,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _matchDurationSeconds: 300
-  _targetKills: 1
+  _targetKills: 5
   _targetReachedBroadcastSeconds: 2
   _endGamePanel: {fileID: 687492153}
   _endSummaryText: {fileID: 338932284}

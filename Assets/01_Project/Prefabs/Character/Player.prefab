@@ -4348,6 +4348,7 @@ GameObject:
   - component: {fileID: 6611223344556677890}
   - component: {fileID: 8811223344556677892}
   - component: {fileID: 7711223344556677891}
+  - component: {fileID: 1310996394797895783}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -4457,8 +4458,8 @@ MonoBehaviour:
   _localLocomotionSource: {fileID: 5201429945135145308}
   _networkBuffer: {fileID: 1491969300644685924}
   _cameraPivot: {fileID: 1730765580858809607}
-  _walkSpeed: 4.5
-  _sprintSpeed: 7
+  _walkSpeed: 4
+  _sprintSpeed: 6.5
   _limitSpeedToWalkWhileAiming: 1
   _limitSpeedToWalkWhileFiring: 1
   _acceleration: 40
@@ -4862,9 +4863,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _clientPrediction: 1
-  _reconcilePositionThreshold: 1
+  _reconcileIgnoreBelow: 0.06
+  _reconcileBlendUntil: 0.32
+  _reconcileHardResetAbove: 0.85
+  _blendPositionSharpness: 10
+  _blendVelocitySharpness: 8
+  _yawIgnoreBelowDeg: 0.35
+  _blendYawSharpness: 10
   _buffer: {fileID: 0}
   _motor: {fileID: 0}
+  _inputHistory: {fileID: 0}
 --- !u!114 &3132716042833844477
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4889,6 +4897,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fceff459c3cd794b86701c0b2f32b8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _lagCompensationRewindSeconds: 0.3
 --- !u!114 &8723419028475612304
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4937,6 +4946,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7b8b9a10d2e3f405162738495a6b7c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1310996394797895783
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4802439671925501617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc45bccc2d627e043b68b9499e97595a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _capacityPow2: 512
 --- !u!1 &4840732966057307524
 GameObject:
   m_ObjectHideFlags: 0
