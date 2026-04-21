@@ -6,7 +6,7 @@ namespace FpsDemo.Combat
     /// <summary>
     /// 订阅同物体上 <see cref="FpsHitscanWeapon"/> 或 <see cref="FpsAiHitscanWeapon"/> 的 <c>ShotResolved</c>：
     /// 命中可伤害体（敌人等）用 <see cref="_impactDamageablePrefab"/>，否则用环境特效 <see cref="_impactWorldPrefab"/>。
-    /// 判定与 <see cref="HitscanShotResolver"/> 输出的 <see cref="ShotHitInfo.HitDamageable"/> 一致。
+    /// 玩家联机时 <see cref="FpsHitscanWeapon"/> 的解析结果来自服务端判伤回传；人机仍为本地解析。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HitscanImpactVfxFeedback : MonoBehaviour

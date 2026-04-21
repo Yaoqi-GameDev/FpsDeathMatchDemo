@@ -12,7 +12,7 @@ namespace FpsDemo.Combat
     /// 第一人称 Hitscan：从 <see cref="Camera"/> 中心射线，命中 <see cref="IDamageable"/>，调用 <c>ApplyDamage(伤害, 伤害来源)</c>；伤害来源为 <see cref="Transform.root"/>（与 <c>Player</c> 根一致）。
     /// 射线<strong>包含</strong> Player 层，以便打人机/他人；<strong>同一角色根</strong>上的命中视为自伤并跳过（<c>TryResolveShot</c>）。
     /// 读 <see cref="FpsInput"/>；支持多份 <see cref="HitscanWeaponConfig"/> 与切枪（<b>1</b>/<b>2</b>），每槽独立弹药；可选拖「武器模型根」显隐。命中解析见 <see cref="HitscanShotResolver"/>；人机请用 <c>FpsAiHitscanWeapon</c>。
-    /// 联机且存在 <see cref="PlayerHitscanNetBridge"/> / <see cref="HitscanWeaponAmmoSync"/> 时：弹匣与备弹由服务器 <see cref="NetworkVariable{T}"/> 同步；开火由 <see cref="PlayerHitscanNetBridge"/> 在服务端扣弹后再解析伤害（可走 <see cref="HitscanLagCompensationResolver"/> 回溯）；本机再用 <c>applyDamage:false</c> 解析一次供弹孔/准星等表现。
+    /// 联机且存在 <see cref="PlayerHitscanNetBridge"/> / <see cref="HitscanWeaponAmmoSync"/> 时：弹匣与备弹由服务器 <see cref="NetworkVariable{T}"/> 同步；开火由 <see cref="PlayerHitscanNetBridge"/> 在服务端扣弹并解析伤害（可走 <see cref="HitscanLagCompensationResolver"/> 回溯）；<see cref="ShotHitDamageable"/> / <see cref="ShotResolved"/> 由服务器经 <see cref="ApplyServerAuthoritativeHitFeedback"/> 回传后再触发（准星/音效/粒子与判伤一致）。单机仍在本机解析后立即触发。
     /// 事件：<see cref="ShotHitDamageable"/>、<see cref="ShotResolved"/>、<see cref="ShotFired"/>（顺序）、<see cref="ReloadStarted"/>、
     /// <see cref="DryFire"/>（弹匣空时本帧按下开火）、<see cref="WeaponSlotChanged"/>（槽位变化后，参数为新下标）。
     /// </summary>
@@ -337,18 +337,6 @@ namespace FpsDemo.Combat
             if (online)
             {
                 _hitscanNetBridge.RequestHitscanShot(ray, _currentIndex);
-                HitscanShotResolver.Resolve(
-                    ray,
-                    Current.MaxRange,
-                    _hitLayers,
-                    transform,
-                    Current.DamagePerShot,
-                    _bodyDamageMultiplierConfig,
-                    false,
-                    out bool hitDamageableFx,
-                    out ShotHitInfo shotInfoFx);
-                ShotHitDamageable?.Invoke(hitDamageableFx);
-                ShotResolved?.Invoke(shotInfoFx);
             }
             else
             {
@@ -411,6 +399,16 @@ namespace FpsDemo.Combat
                 true,
                 out hitDamageable,
                 out shotInfo);
+        }
+
+        /// <summary>
+        /// 联机：仅由 <see cref="PlayerHitscanNetBridge"/> 在收到服务端 <see cref="ServerResolveShot"/> 结果后调用，
+        /// 触发 <see cref="ShotHitDamageable"/> / <see cref="ShotResolved"/>（与服务器判伤一致；<paramref name="shotInfo"/> 不含跨机的 Collider 引用）。
+        /// </summary>
+        public void ApplyServerAuthoritativeHitFeedback(bool hitDamageable, ShotHitInfo shotInfo)
+        {
+            ShotHitDamageable?.Invoke(hitDamageable);
+            ShotResolved?.Invoke(shotInfo);
         }
     }
 }

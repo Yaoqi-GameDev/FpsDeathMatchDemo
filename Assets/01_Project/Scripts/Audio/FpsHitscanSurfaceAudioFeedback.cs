@@ -4,7 +4,7 @@ using UnityEngine;
 namespace FpsDemo.Audio
 {
     /// <summary>
-    /// 仅玩家：订阅 <see cref="FpsHitscanWeapon.ShotResolved"/>，按命中类型播放不同 2D 命中音（可伤害体 / 环境）。
+    /// 仅玩家：订阅 <see cref="FpsHitscanWeapon.ShotResolved"/>，按命中类型播放不同 2D 命中音（可伤害体 / 环境）。联机时事件来自服务端判伤回传。
     /// 人机请使用 <see cref="FpsAiHitscanWeapon"/> 另行挂载变体；本组件不处理 AI。
     /// </summary>
     [DefaultExecutionOrder(-39)]

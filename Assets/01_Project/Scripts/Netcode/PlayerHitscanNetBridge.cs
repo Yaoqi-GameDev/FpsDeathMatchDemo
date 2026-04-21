@@ -5,7 +5,7 @@ using UnityEngine;
 namespace FpsDemo.Netcode
 {
     /// <summary>
-    /// Owner 将本帧射线发给服务器，由 <see cref="FpsHitscanWeapon.ServerResolveShot"/> 在服务端做 Hitscan 扣血。
+    /// Owner 将本帧射线发给服务器，由 <see cref="FpsHitscanWeapon.ServerResolveShot"/> 在服务端做 Hitscan 扣血；再以 <see cref="NotifyOwnerShotFeedbackClientRpc"/> 将判伤结果发回 Owner，驱动 <see cref="FpsHitscanWeapon.ApplyServerAuthoritativeHitFeedback"/>（准星/音效/粒子）。
     /// 挂在 Player 根（与 <see cref="NetworkObject"/>、<see cref="FpsHitscanWeapon"/> 同物体）。
     /// </summary>
     [DisallowMultipleComponent]
@@ -49,7 +49,44 @@ namespace FpsDemo.Netcode
                 return;
 
             var ray = new Ray(origin, direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward);
-            _weapon.ServerResolveShot(weaponSlotIndex, ray, _lagCompensationRewindSeconds, out _, out _);
+            _weapon.ServerResolveShot(
+                weaponSlotIndex,
+                ray,
+                _lagCompensationRewindSeconds,
+                out bool hitDamageable,
+                out ShotHitInfo shotInfo);
+
+            var ownerOnly = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams
+                {
+                    TargetClientIds = new[] { OwnerClientId }
+                }
+            };
+
+            NotifyOwnerShotFeedbackClientRpc(
+                shotInfo.HasWorldHit,
+                shotInfo.Point,
+                shotInfo.Normal,
+                hitDamageable,
+                ownerOnly);
+        }
+
+        [ClientRpc]
+        private void NotifyOwnerShotFeedbackClientRpc(
+            bool hasWorldHit,
+            Vector3 point,
+            Vector3 normal,
+            bool hitDamageable,
+            ClientRpcParams clientRpcParams = default)
+        {
+            if (_weapon == null)
+                _weapon = GetComponent<FpsHitscanWeapon>();
+            if (_weapon == null)
+                return;
+
+            var info = new ShotHitInfo(hasWorldHit, point, normal, hitDamageable, null);
+            _weapon.ApplyServerAuthoritativeHitFeedback(hitDamageable, info);
         }
     }
 }

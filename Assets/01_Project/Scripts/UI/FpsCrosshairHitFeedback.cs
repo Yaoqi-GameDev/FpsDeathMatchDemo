@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace FpsDemo.UI
 {
     /// <summary>
-    /// 订阅 <see cref="FpsHitscanWeapon.ShotHitDamageable"/>，命中可受伤目标时短暂改变准星 <see cref="Image"/> 颜色。
+    /// 订阅 <see cref="FpsHitscanWeapon.ShotHitDamageable"/>，命中可受伤目标时短暂改变准星 <see cref="Image"/> 颜色。联机时事件来自服务端判伤回传。
     /// </summary>
     public sealed class FpsCrosshairHitFeedback : MonoBehaviour
     {
