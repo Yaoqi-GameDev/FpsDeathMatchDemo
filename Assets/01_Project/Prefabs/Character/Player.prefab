@@ -4897,7 +4897,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fceff459c3cd794b86701c0b2f32b8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _lagCompensationRewindSeconds: 0.3
+  _lagCompensationRewindSeconds: 0.02
 --- !u!114 &8723419028475612304
 MonoBehaviour:
   m_ObjectHideFlags: 0

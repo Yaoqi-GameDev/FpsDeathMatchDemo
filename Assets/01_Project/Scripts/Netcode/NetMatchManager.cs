@@ -145,7 +145,7 @@ namespace FpsDemo.Netcode
                     if (playerObject == null)
                         continue;
                     var bridge = playerObject.GetComponent<PlayerRespawnNetBridge>();
-                    bridge?.ServerApplyFullMatchRoundReset(msp);
+                    bridge?.ServerApplyFullMatchRoundReset(msp, resetNetworkKillsForNewRound: true);
                 }
 
                 yield break;

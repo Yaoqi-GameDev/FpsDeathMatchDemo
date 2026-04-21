@@ -74,14 +74,16 @@ namespace FpsDemo.Netcode
         [ServerRpc(RequireOwnership = true)]
         private void RequestRespawnServerRpc()
         {
-            ServerApplyFullMatchRoundReset(ResolveMatchSpawnPoints());
+            // 普通死亡复活：勿清零 NetworkKills，否则 HUD 排行会像「整局重置」。
+            ServerApplyFullMatchRoundReset(ResolveMatchSpawnPoints(), resetNetworkKillsForNewRound: false);
         }
 
         /// <summary>
-        /// 服务器：传送 + 击杀 NV 清零 + 满血与弹药 + Owner 表现收尾。
-        /// NGO 重载同一场景时玩家物体常不再次 <see cref="OnNetworkSpawn"/>，需由 <see cref="NetMatchManager"/> 在 <see cref="NetworkSceneManager.OnLoadEventCompleted"/> 统一调用。
+        /// 服务器：传送 + 满血与弹药 + Owner 表现收尾。
+        /// <paramref name="resetNetworkKillsForNewRound"/> 为 <c>true</c> 时（再来一局 / 场景重载后由 <see cref="NetMatchManager"/> 调用）才清零 <see cref="PlayerMatchStatsNet"/>；
+        /// 普通复活须为 <c>false</c>，避免与局内记分冲突。
         /// </summary>
-        internal void ServerApplyFullMatchRoundReset(MatchSpawnPoints msp)
+        internal void ServerApplyFullMatchRoundReset(MatchSpawnPoints msp, bool resetNetworkKillsForNewRound = true)
         {
             if (!IsServer || !IsSpawned)
                 return;
@@ -92,7 +94,8 @@ namespace FpsDemo.Netcode
                 ApplyServerTeleport(spawnTf.position, spawnTf.eulerAngles.y);
             }
 
-            if (TryGetComponent<PlayerMatchStatsNet>(out var statsNet))
+            if (resetNetworkKillsForNewRound
+                && TryGetComponent<PlayerMatchStatsNet>(out var statsNet))
                 statsNet.ServerResetKillsForNewRound();
 
             if (TryGetComponent<NetworkHealthBridge>(out var netHb))
