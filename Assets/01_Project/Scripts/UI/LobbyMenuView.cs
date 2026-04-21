@@ -110,7 +110,8 @@ namespace FpsDemo.UI
 
         private void OnCreateRoomClicked()
         {
-            LobbyNetSession.TryStartHostAndLoadMatch(SetHint);
+            string portStr = _joinPortInput != null ? _joinPortInput.text.Trim() : "";
+            LobbyNetSession.TryStartHostAndLoadMatch(SetHint, portStr);
         }
 
         private void OnJoinGameClicked()

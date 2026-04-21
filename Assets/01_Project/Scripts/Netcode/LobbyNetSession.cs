@@ -16,7 +16,8 @@ namespace FpsDemo.Netcode
         public const int MatchSceneBuildIndex = 1;
 
         /// <summary>Host starts first, then loads the match scene for everyone who joins later.</summary>
-        public static void TryStartHostAndLoadMatch(Action<string> setHint)
+        /// <param name="listenPortText">可选；与 Join 共用 Port 输入时，主机在该 UDP 端口监听。空则沿用 Transport 当前 Port（默认 7777）。</param>
+        public static void TryStartHostAndLoadMatch(Action<string> setHint, string listenPortText = null)
         {
             if (!TryGetNetworkManager(out var nm, setHint))
                 return;
@@ -26,6 +27,12 @@ namespace FpsDemo.Netcode
                 ReportError(setHint, "Already connected. Restart the application or disconnect first.");
                 return;
             }
+
+            var utp = nm.NetworkConfig.NetworkTransport as UnityTransport;
+            if (utp == null)
+                utp = nm.GetComponent<UnityTransport>();
+            if (utp != null)
+                ApplyHostListenOnAllInterfaces(utp, listenPortText);
 
             GameSessionContext.SetOfflineSession(false);
 
@@ -91,6 +98,24 @@ namespace FpsDemo.Netcode
             GameSessionContext.SetOfflineSession(true);
             SceneManager.LoadScene(MatchSceneBuildIndex);
             setHint?.Invoke("Loading offline match.");
+        }
+
+        /// <summary>
+        /// 若 <see cref="ConnectionAddressData.ServerListenAddress"/> 为 127.0.0.1，主机只接受本机连接，局域网无法连入。
+        /// 改为 <c>0.0.0.0</c> 在所有网卡上监听 UDP（与 ping 通否无关，需放行本端口防火墙）。
+        /// </summary>
+        private static void ApplyHostListenOnAllInterfaces(UnityTransport utp, string listenPortText)
+        {
+            var d = utp.ConnectionData;
+            d.ServerListenAddress = "0.0.0.0";
+            if (!string.IsNullOrWhiteSpace(listenPortText)
+                && ushort.TryParse(listenPortText.Trim(), out ushort p)
+                && p > 0)
+            {
+                d.Port = p;
+            }
+
+            utp.ConnectionData = d;
         }
 
         private static bool TryGetNetworkManager(out NetworkManager nm, Action<string> setHint)
