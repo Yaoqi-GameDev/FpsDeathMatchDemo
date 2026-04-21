@@ -177,6 +177,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-04-18 | **Hitscan 基础延迟补偿**：**`MatchLagCompensationService`**（Host **`Start`** 挂在 **`MatchManager`** 上；**`LateUpdate`**、`DefaultExecutionOrder(80)` 采样 **`MatchParticipant`** 根位姿环形缓冲）；**`HitscanLagCompensationResolver`** 判伤前临时回溯目标 **`Time.timeAsDouble - rewind`** 再 **`HitscanShotResolver.Resolve`**；**`PlayerHitscanNetBridge`** Inspector **`_lagCompensationRewindSeconds`**（默认 0.1）；无服务或失败则回退无回溯 |
 | 2026-04-18 | **Lobby UI**：移除运行时生成；**`LobbyMenuUiBuilder`** 编辑器菜单在场景中搭建 **`LobbyRoot`** + 绑定 **`LobbyMenuView`**；**`LobbyMenuView`** 可选按层级命名自动引用 |
 | 2026-04-18 | **`NetworkKillFeedBroadcaster`**（场景物体 + **`NetworkObject`**）：服务器订阅 **`CombatKillBus`** → **`ClientRpc`** 播报；**`DeathmatchHudView`** 联机时忽略总线插入、用 **`AppendKillFeedFromNetwork`**（含 Host） |
 | 2026-04-18 | **`PlayerHitscanNetBridge`**（Player 根）：Owner **`ServerRpc`** 提交射线，**`FpsHitscanWeapon.ServerResolveShot`** 仅在服务器扣血；联机时本机再 **`Resolve(applyDamage:false)`** 做弹孔等表现；未联网或无桥接时武器行为同单机 |
@@ -372,6 +373,7 @@ CombatKillBus.KillCommitted(KillReport)
 | `FpsWeaponAudioObserver` | 订阅 **`ShotFired` / `ReloadStarted` / `DryFire`**，拖 **Clip**，调 **`AudioManager`** |
 | `FpsHitscanSurfaceAudioFeedback` | 仅 Player：订阅 **`ShotResolved`**，**可伤害体 / 环境** 各一 **Clip**，调 **`AudioManager`** |
 | `HitscanWeaponConfig`（`Scripts/Data/`） | **ScriptableObject**：伤害、射速、弹药、射程、**后座**（`Recoil*`）；**勿在运行时改磁盘 asset**；菜单 **Create → FpsDemo → Data → Hitscan Weapon Config** |
+| `FpsHitscanWeapon` | 玩家 Hitscan：拖 **`_configs`**、**`FpsInput`**、**`Main Camera`**；命中经 **`HitscanShotResolver`**；事件 **`ShotHitDamageable`** → **`ShotResolved`** → **`ShotFired`**；可选 **`DryFire`**、**`WeaponSlotChanged(int)`**；**`GetWeaponVisualRoot(int)`** |
 | `FpsHitscanWeapon` | 玩家 Hitscan：拖 **`_configs`**、**`FpsInput`**、**`Main Camera`**；命中经 **`HitscanShotResolver`**；事件 **`ShotHitDamageable`** → **`ShotResolved`** → **`ShotFired`**；可选 **`DryFire`**、**`WeaponSlotChanged(int)`**；**`GetWeaponVisualRoot(int)`** |
 | `FpsRecoilController` | 订阅 **`ShotFired`**，拖 **`FpsHitscanWeapon`**、**后座用 Transform**（一般为 **Main Camera**）；**`LateUpdate`** 恢复后座角 |
 | `FpsWeaponViewModelAnimator` | 与 **`FpsHitscanWeapon` 同物体**：拖 **`FpsInput`**、**`FpsPlayerMotor`**（空则同物体 **`GetComponent`**）；**`Running`** ← **`ShouldDriveArmsSprintRunningPose`**；**`FireHeld` / `AimHeld` / `IsReloading`** 时关 **`Running`**（疾跑换弹只显换弹）；**`Aim` / `Aiming`** 同步 Infima 手臂与武器 **`Aiming`**；**`WeaponViewModelAnimRouting`**；切槽 **`RuntimeAnimatorController`** |

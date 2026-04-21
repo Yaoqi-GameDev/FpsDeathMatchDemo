@@ -13,6 +13,10 @@ namespace FpsDemo.Netcode
     [RequireComponent(typeof(HitscanWeaponAmmoSync))]
     public sealed class PlayerHitscanNetBridge : NetworkBehaviour
     {
+        [Header("延迟补偿（仅服务器）")]
+        [Tooltip("判伤前将目标位置回溯约该秒数（近似单向延迟）；需场景内有 MatchLagCompensationService。")]
+        [SerializeField] private float _lagCompensationRewindSeconds = 0.1f;
+
         private FpsHitscanWeapon _weapon;
         private HitscanWeaponAmmoSync _ammoSync;
 
@@ -45,7 +49,7 @@ namespace FpsDemo.Netcode
                 return;
 
             var ray = new Ray(origin, direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward);
-            _weapon.ServerResolveShot(weaponSlotIndex, ray, out _, out _);
+            _weapon.ServerResolveShot(weaponSlotIndex, ray, _lagCompensationRewindSeconds, out _, out _);
         }
     }
 }

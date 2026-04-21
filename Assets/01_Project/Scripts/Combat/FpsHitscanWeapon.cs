@@ -1,6 +1,7 @@
 using System;
 using FpsDemo.Data;
 using FpsDemo.Fps;
+using FpsDemo.Match;
 using FpsDemo.Netcode;
 using Unity.Netcode;
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace FpsDemo.Combat
     /// 第一人称 Hitscan：从 <see cref="Camera"/> 中心射线，命中 <see cref="IDamageable"/>，调用 <c>ApplyDamage(伤害, 伤害来源)</c>；伤害来源为 <see cref="Transform.root"/>（与 <c>Player</c> 根一致）。
     /// 射线<strong>包含</strong> Player 层，以便打人机/他人；<strong>同一角色根</strong>上的命中视为自伤并跳过（<c>TryResolveShot</c>）。
     /// 读 <see cref="FpsInput"/>；支持多份 <see cref="HitscanWeaponConfig"/> 与切枪（<b>1</b>/<b>2</b>），每槽独立弹药；可选拖「武器模型根」显隐。命中解析见 <see cref="HitscanShotResolver"/>；人机请用 <c>FpsAiHitscanWeapon</c>。
-    /// 联机且存在 <see cref="PlayerHitscanNetBridge"/> / <see cref="HitscanWeaponAmmoSync"/> 时：弹匣与备弹由服务器 <see cref="NetworkVariable{T}"/> 同步；开火由 <see cref="PlayerHitscanNetBridge"/> 在服务端扣弹后再解析伤害；本机再用 <c>applyDamage:false</c> 解析一次供弹孔/准星等表现。
+    /// 联机且存在 <see cref="PlayerHitscanNetBridge"/> / <see cref="HitscanWeaponAmmoSync"/> 时：弹匣与备弹由服务器 <see cref="NetworkVariable{T}"/> 同步；开火由 <see cref="PlayerHitscanNetBridge"/> 在服务端扣弹后再解析伤害（可走 <see cref="HitscanLagCompensationResolver"/> 回溯）；本机再用 <c>applyDamage:false</c> 解析一次供弹孔/准星等表现。
     /// 事件：<see cref="ShotHitDamageable"/>、<see cref="ShotResolved"/>、<see cref="ShotFired"/>（顺序）、<see cref="ReloadStarted"/>、
     /// <see cref="DryFire"/>（弹匣空时本帧按下开火）、<see cref="WeaponSlotChanged"/>（槽位变化后，参数为新下标）。
     /// </summary>
@@ -368,7 +369,13 @@ namespace FpsDemo.Combat
         }
 
         /// <summary>仅服务器：按槽位用本武器配置做 Hitscan 并扣血（<see cref="PlayerHitscanNetBridge"/> 的 ServerRpc 调用）。</summary>
-        public void ServerResolveShot(int weaponSlotIndex, Ray ray, out bool hitDamageable, out ShotHitInfo shotInfo)
+        /// <param name="lagCompensationRewindSeconds">大于 0 且存在 <see cref="MatchLagCompensationService"/> 时，将目标回溯约该秒数再判伤。</param>
+        public void ServerResolveShot(
+            int weaponSlotIndex,
+            Ray ray,
+            float lagCompensationRewindSeconds,
+            out bool hitDamageable,
+            out ShotHitInfo shotInfo)
         {
             hitDamageable = false;
             shotInfo = default;
@@ -377,6 +384,23 @@ namespace FpsDemo.Combat
                 return;
 
             var cfg = _configs[weaponSlotIndex];
+
+            if (lagCompensationRewindSeconds > 0.0001f
+                && HitscanLagCompensationResolver.TryResolve(
+                    ray,
+                    cfg.MaxRange,
+                    _hitLayers,
+                    transform,
+                    cfg.DamagePerShot,
+                    _bodyDamageMultiplierConfig,
+                    true,
+                    lagCompensationRewindSeconds,
+                    out hitDamageable,
+                    out shotInfo))
+            {
+                return;
+            }
+
             HitscanShotResolver.Resolve(
                 ray,
                 cfg.MaxRange,

@@ -102,6 +102,10 @@ namespace FpsDemo.Match
                 _endGamePanel.SetActive(false);
 
             NetMatchManager.NotifyMatchSceneReadyForPossibleRematchReset();
+
+            var nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening && nm.IsServer && GetComponent<MatchLagCompensationService>() == null)
+                gameObject.AddComponent<MatchLagCompensationService>();
         }
 
         /// <summary>
