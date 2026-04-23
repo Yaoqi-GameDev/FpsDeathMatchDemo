@@ -33,6 +33,9 @@ namespace FpsDemo.Netcode
             if (TryGetComponent<FpsInput>(out var input))
                 input.enabled = owner;
 
+            if (TryGetComponent<ParrelSyncClientStrafeBot>(out var strafeBot))
+                strafeBot.enabled = owner;
+
             if (TryGetComponent<FpsPlayerLook>(out var look))
                 look.enabled = owner;
 

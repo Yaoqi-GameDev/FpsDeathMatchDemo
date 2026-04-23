@@ -10,11 +10,13 @@ namespace FpsDemo.Fps
     public sealed class FpsInputLocomotionSource : MonoBehaviour, ILocomotionInputSource
     {
         [SerializeField] private FpsInput _input;
+        private ParrelSyncClientStrafeBot _strafeBot;
 
         private void Awake()
         {
             if (_input == null)
                 _input = GetComponent<FpsInput>();
+            _strafeBot = GetComponent<ParrelSyncClientStrafeBot>();
         }
 
         public bool TryGetFrame(out PlayerLocomotionInput frame)
@@ -35,6 +37,18 @@ namespace FpsDemo.Fps
             frame.CrouchPressedThisFrame = _input.CrouchPressedThisFrame;
             frame.InteractPressedThisFrame = _input.InteractPressedThisFrame;
             frame.ClientTick = 0;
+
+            // 联机测试用假走位：必须在此覆盖（与 FpsInput 同帧先后无关），使 PlayerLocomotionNetBridge 的 ServerRpc 与 FpsPlayerMotor 读到同一组 Move/Sprint。
+            if (_strafeBot == null)
+                _strafeBot = GetComponent<ParrelSyncClientStrafeBot>();
+            if (_strafeBot != null
+                && _input.GameplayInputEnabled
+                && _strafeBot.ShouldInjectLocomotion)
+            {
+                frame.MoveAxes = _strafeBot.GetSyntheticMoveAxes();
+                frame.SprintHeld = _strafeBot.SyntheticSprintHeld;
+            }
+
             return true;
         }
     }

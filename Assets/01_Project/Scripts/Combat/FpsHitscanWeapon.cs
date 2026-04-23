@@ -125,6 +125,7 @@ namespace FpsDemo.Combat
 
         private void Awake()
         {
+            // 检查 _configs 是否已正确分配 Config，并且至少包含 1 项，否则脚本禁用，避免后续 Null 异常
             if (_configs == null || _configs.Length == 0)
             {
                 Debug.LogError("FpsHitscanWeapon: _configs 至少填 1 份 HitscanWeaponConfig。", this);
@@ -132,6 +133,7 @@ namespace FpsDemo.Combat
                 return;
             }
 
+            // 检查每一项 _configs 都不为空，否则脚本禁用，避免后续使用时报错
             for (int i = 0; i < _configs.Length; i++)
             {
                 if (_configs[i] == null)
@@ -141,20 +143,27 @@ namespace FpsDemo.Combat
                     return;
                 }
             }
+ 
 
+            // 如果尚未手动设置射线检测层（_hitLayers），则默认使用 Unity 的 Physics.DefaultRaycastLayers
             if (_hitLayers.value == 0)
                 _hitLayers = Physics.DefaultRaycastLayers;
 
+            // 初始化每个武器槽的弹匣和备弹数组
             _magazinePerSlot = new int[_configs.Length];
             _reservePerSlot = new int[_configs.Length];
             for (int i = 0; i < _configs.Length; i++)
             {
+                // 每个槽的弹匣容量取决于该槽配置
                 _magazinePerSlot[i] = _configs[i].MagazineSize;
+                // 每个槽的备弹初始化为配置的 StartingReserveAmmo，最低为 0
                 _reservePerSlot[i] = Mathf.Max(0, _configs[i].StartingReserveAmmo);
             }
 
+            // 当前武器索引初始化为 0，应用初始武器可视化
             _currentIndex = 0;
             ApplyWeaponVisuals();
+            // 获取网络相关的桥接与弹药同步组件（若有）
             _hitscanNetBridge = GetComponent<PlayerHitscanNetBridge>();
             _ammoSync = GetComponent<HitscanWeaponAmmoSync>();
         }

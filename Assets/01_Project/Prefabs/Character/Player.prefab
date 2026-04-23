@@ -4349,6 +4349,7 @@ GameObject:
   - component: {fileID: 8811223344556677892}
   - component: {fileID: 7711223344556677891}
   - component: {fileID: 1310996394797895783}
+  - component: {fileID: -596865427045344125}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -4897,7 +4898,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fceff459c3cd794b86701c0b2f32b8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _lagCompensationRewindSeconds: 0.02
+  _lagCompensationRewindSeconds: 0
 --- !u!114 &8723419028475612304
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4959,6 +4960,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _capacityPow2: 512
+--- !u!114 &-596865427045344125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4802439671925501617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03a3f79ad267cba40be7708db0a714d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _enableAutoStrafe: 0
+  _onlyIfNetworkOwner: 1
+  _strafePeriodSeconds: 4
+  _holdSprint: 0
 --- !u!1 &4840732966057307524
 GameObject:
   m_ObjectHideFlags: 0
