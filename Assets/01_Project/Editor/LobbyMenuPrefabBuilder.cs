@@ -12,11 +12,16 @@ using UnityEngine.UI;
 /// </summary>
 public static class LobbyMenuPrefabBuilder
 {
-    private const string MenuPath = "FpsDemo/UI/Build LobbyMenu Prefab And Wire UISettings";
-    private const string PrefabDir = "Assets/01_Project/Prefabs/UI/Screens";
-    private const string PrefabPath = PrefabDir + "/LobbyMenu.prefab";
-    private const string UiSettingsPath = "Assets/01_Project/Data/UISettings/UISettings.asset";
+    private const string MenuPath = "FpsDemo/UI/Build LobbyMenuWindowController Prefab And Wire UISettings";
+    private const string PrefabDir = UiSettingsScreenList.ScreensDir;
+    private const string PrefabPath = PrefabDir + "/LobbyMenuWindowController.prefab";
     private const float MainColumnWidth = 448f;
+
+    private static readonly string[] LegacyPrefabPaths =
+    {
+        PrefabDir + "/LobbyMenu.prefab",
+        PrefabDir + "/LobbyMenuController.prefab",
+    };
 
     [InitializeOnLoadMethod]
     private static void AutoBuildIfMissing()
@@ -42,11 +47,17 @@ public static class LobbyMenuPrefabBuilder
         if (!Directory.Exists(PrefabDir))
             Directory.CreateDirectory(PrefabDir);
 
-        var rootGo = new GameObject(LobbyMenuWindow.ScreenId, typeof(RectTransform));
+        foreach (var legacy in LegacyPrefabPaths)
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(legacy) != null)
+                AssetDatabase.DeleteAsset(legacy);
+        }
+
+        var rootGo = new GameObject(LobbyMenuWindowController.ScreenId, typeof(RectTransform));
         var rootRt = rootGo.GetComponent<RectTransform>();
         StretchFull(rootRt);
 
-        var window = rootGo.AddComponent<LobbyMenuWindow>();
+        var window = rootGo.AddComponent<LobbyMenuWindowController>();
         var lobbyRoot = BuildLobbyRoot(rootRt);
         var settingsPanel = BuildSettingsPanel(rootRt);
 
@@ -81,7 +92,7 @@ public static class LobbyMenuPrefabBuilder
         PrefabUtility.SaveAsPrefabAsset(rootGo, PrefabPath);
         Object.DestroyImmediate(rootGo);
 
-        WireUiSettings(PrefabPath);
+        UiSettingsScreenList.WireAllPresentScreens();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
@@ -89,36 +100,11 @@ public static class LobbyMenuPrefabBuilder
         if (showDialog)
         {
             EditorUtility.DisplayDialog(
-                "LobbyMenu Prefab",
-                "Built LobbyMenu.prefab and added it to UISettings screens list.\n" +
+                "LobbyMenuWindowController Prefab",
+                "Built LobbyMenuWindowController.prefab and refreshed UISettings screens.\n" +
                 "Lobby scene should have LobbyUiBootstrap with UISettings assigned.",
                 "OK");
         }
-    }
-
-    private static void WireUiSettings(string lobbyMenuPrefabPath)
-    {
-        var settings = AssetDatabase.LoadAssetAtPath<UISettings>(UiSettingsPath);
-        if (settings == null)
-        {
-            Debug.LogError("[LobbyMenuPrefabBuilder] UISettings not found at " + UiSettingsPath);
-            return;
-        }
-
-        var screenPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(lobbyMenuPrefabPath);
-        if (screenPrefab == null)
-        {
-            Debug.LogError("[LobbyMenuPrefabBuilder] Failed to load " + lobbyMenuPrefabPath);
-            return;
-        }
-
-        var so = new SerializedObject(settings);
-        var listProp = so.FindProperty("screensToRegister");
-        listProp.ClearArray();
-        listProp.InsertArrayElementAtIndex(0);
-        listProp.GetArrayElementAtIndex(0).objectReferenceValue = screenPrefab;
-        so.ApplyModifiedPropertiesWithoutUndo();
-        EditorUtility.SetDirty(settings);
     }
 
     private static T FindBuilt<T>(Transform lobbyRoot, string objectName) where T : Component
@@ -137,7 +123,7 @@ public static class LobbyMenuPrefabBuilder
 
     private static RectTransform BuildLobbyRoot(RectTransform parent)
     {
-        var rootGo = new GameObject(LobbyMenuWindow.ContentRootName, typeof(RectTransform));
+        var rootGo = new GameObject(LobbyMenuWindowController.ContentRootName, typeof(RectTransform));
         var root = rootGo.GetComponent<RectTransform>();
         root.SetParent(parent, false);
         StretchFull(root);

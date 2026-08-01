@@ -1419,14 +1419,13 @@ GameObject:
   - component: {fileID: 756632112}
   - component: {fileID: 756632111}
   - component: {fileID: 756632110}
-  - component: {fileID: 756632113}
   m_Layer: 0
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &756632109
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1511,26 +1510,6 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
---- !u!114 &756632113
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 756632108}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f1e2d3c4b5a6978877665544332211ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _createRoomButton: {fileID: 366037090}
-  _joinGameButton: {fileID: 2060021271}
-  _singlePlayerButton: {fileID: 1631931848}
-  _settingsButton: {fileID: 1452398194}
-  _joinAddressInput: {fileID: 982912875}
-  _joinPortInput: {fileID: 1492895835}
-  _hintText: {fileID: 1206780252}
-  _settingsPlaceholderPanel: {fileID: 323396480}
 --- !u!1 &855623284
 GameObject:
   m_ObjectHideFlags: 0

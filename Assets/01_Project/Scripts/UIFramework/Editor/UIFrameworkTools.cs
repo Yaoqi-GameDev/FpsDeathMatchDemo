@@ -48,12 +48,17 @@ namespace UIFramework.Editor
             var canvas = root.AddComponent<Canvas>();
             root.layer = uiLayer;
 
-            //  ScreenSpaceCamera 允许使用3D模型、粒子效果
-            canvas.renderMode = RenderMode.ScreenSpaceCamera;
-            canvas.worldCamera = cam;
+            // Overlay：避免 Camera 模式被局内 Overlay HUD 盖住，或 UICamera FarClip / Layer  culled 导致 Game 看不见。
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 1000;
+            canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.TexCoord1
+                | AdditionalCanvasShaderChannels.Normal
+                | AdditionalCanvasShaderChannels.Tangent;
 
             cam.transform.SetParent(root.transform, false);
             cam.transform.localPosition = new Vector3(0f, 0f, -1500f);
+            cam.enabled = false;
+            cam.gameObject.SetActive(false);
 
             var screenScaler = root.AddComponent<CanvasScaler>();
             screenScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;

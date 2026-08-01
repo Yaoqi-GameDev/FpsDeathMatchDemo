@@ -1,6 +1,8 @@
 using FpsDemo.Core;
 using UIFramework;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace FpsDemo.UI
 {
@@ -18,7 +20,10 @@ namespace FpsDemo.UI
         public static UIFrame Ensure(UISettings settings)
         {
             if (Frame != null)
+            {
+                ConfigureForGameView(Frame);
                 return Frame;
+            }
 
             if (settings == null)
             {
@@ -37,7 +42,51 @@ namespace FpsDemo.UI
             if (Frame.GetComponent<DontDestroyThisRoot>() == null)
                 Frame.gameObject.AddComponent<DontDestroyThisRoot>();
 
+            ConfigureForGameView(Frame);
             return Frame;
+        }
+
+        /// <summary>
+        /// Screen Space Camera + 低 Depth / 窄 FarClip 时，Scene 能看见、Game 看不见；
+        /// DeathMatch 的 Overlay HUD 也会盖住 Camera 模式 UI。统一为 Overlay 高排序。
+        /// </summary>
+        public static void ConfigureForGameView(UIFrame frame)
+        {
+            if (frame == null)
+                return;
+
+            var canvas = frame.MainCanvas;
+            if (canvas != null)
+            {
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.worldCamera = null;
+                canvas.sortingOrder = 1000;
+                canvas.additionalShaderChannels =
+                    AdditionalCanvasShaderChannels.TexCoord1
+                    | AdditionalCanvasShaderChannels.Normal
+                    | AdditionalCanvasShaderChannels.Tangent;
+            }
+
+            if (frame.UICamera != null)
+                frame.UICamera.enabled = false;
+
+            DisableExtraEventSystems(frame.transform);
+        }
+
+        public static void DisableExtraEventSystems(Transform uiFrameRoot)
+        {
+#pragma warning disable CS0618
+            var systems = Object.FindObjectsOfType<EventSystem>();
+#pragma warning restore CS0618
+            for (int i = 0; i < systems.Length; i++)
+            {
+                var es = systems[i];
+                if (es == null)
+                    continue;
+                if (uiFrameRoot != null && es.transform.IsChildOf(uiFrameRoot))
+                    continue;
+                es.gameObject.SetActive(false);
+            }
         }
 
         /// <summary>测试或关机时可清空引用（一般不必调用）。</summary>

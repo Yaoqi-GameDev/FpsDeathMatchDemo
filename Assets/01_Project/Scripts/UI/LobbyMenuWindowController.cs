@@ -8,12 +8,11 @@ using UnityEngine.UI;
 namespace FpsDemo.UI
 {
     /// <summary>
-    /// Lobby as a UIFramework <see cref="WindowController"/>. Prefab name / ScreenId: <c>LobbyMenu</c>.
-    /// Button actions match the former <see cref="LobbyMenuView"/>.
+    /// Lobby window. Prefab name / ScreenId: <c>LobbyMenuWindowController</c>.
     /// </summary>
-    public sealed class LobbyMenuWindow : WindowController
+    public sealed class LobbyMenuWindowController : WindowController
     {
-        public const string ScreenId = "LobbyMenu";
+        public const string ScreenId = "LobbyMenuWindowController";
         public const string ContentRootName = "LobbyRoot";
 
         [Header("Buttons")]

@@ -136,8 +136,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 - **胜利**：倒计时 + **目标击杀数**；时间到若无人达标则**比击杀数**，**允许平局**（与先前共识一致）。
 - **有人达到目标击杀**：**先播报数秒**，再**结束本局**（播报时长可配置）。
-- **结算**：正式美术未就绪时先用**占位 UI**（文案/按钮可后续替换）。结算显示时 **暂停玩法**（`Time.timeScale = 0`），仅可操作结算 UI；**UI 与计时**用 **Unscaled Time**，避免与玩法一起冻结。
-- **质感迭代（未做）**：日后可将结算/终局由「全停」改为 **全场景慢动作**（`timeScale` 为 **0～1** 可配）；需注意 UI/音效仍建议与 **unscaled** 或单独管线配合。
+- **结算**：用 **`EndGameWindowController`**；**不**再设 `timeScale = 0`。结束时解锁光标并关闭本地玩法输入，场景可继续跑（人机等），仅本地不能继续开火操作。
 - **玩家死亡**：**不销毁**玩家物体，进入死亡状态后按复活逻辑处理（与 `Health` 配置配合，避免 `Destroy` 玩家）。**复活位置**：**区域内随机**（与假人类似，可配置中心/半径或独立复活区）。
 
 ---
@@ -146,7 +145,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 场景 | 用途 |
 |------|------|
-| `Assets/01_Project/Scenes/Lobby.unity` | **大厅**：创建房间 / 加入 / 单机 / 设置（UI 用 **`LobbyMenuView`**）；**Build Settings 场景 0**；玩法仍在 DeathMatch。 |
+| `Assets/01_Project/Scenes/Lobby.unity` | **大厅**：创建房间 / 加入 / 单机 / 设置（UI 用 **`LobbyMenuWindowController`** + UIFrame）；**Build Settings 场景 0**；玩法仍在 DeathMatch。 |
 | `Assets/01_Project/Scenes/DeathMatch.unity` | **死斗与全部玩法**：场景内**不放 Player**；角色由 **NetworkManager.PlayerPrefab** 在 Host/Client 后生成。大厅 **Single player** = **Solo Host**（`LobbyNetSession.TryStartSoloMatch`），与创建房间同一生成链路。 |
 
 > 若场景职责有变更，请在本表与「变更记录」中同步更新。
@@ -154,20 +153,22 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 ### Lobby 大厅 UI
 
 1. **Build Settings**：`File → Build Settings…` 将 **`Lobby`** 在列表**最上**（索引 **0**），**`DeathMatch`** 为 **1**（已配置时可跳过）。
-2. 打开 **`Lobby.unity`**，菜单 **`FpsDemo → Lobby → Build Or Refresh Lobby UI In Active Scene`**：在 **Canvas** 下生成 **`LobbyRoot`**（英文文案，避免字体缺字）与 **`SettingsPanel`**，并自动填好 **`LobbyMenuView`** 引用；**保存场景**（Ctrl+S）后层级会写进 `Lobby.unity`。
-3. 也可在 Hierarchy **手动**搭界面；**未**在 Inspector 拖引用时，可按与菜单相同的命名（如 `LobbyRoot/BtnCreateRoom`）由脚本 **`TryWireFromHierarchyIfNeeded`** 自动绑定。
-4. Play：Console 出现 **`[Lobby]`** 日志。
-5. **Single player**：调用 **`TryStartSoloMatch`**（内部即本机 Host + 进 DeathMatch），勿再只 `LoadScene`（否则无 PlayerPrefab、进图无角色）。
+2. Play **Lobby**：`LobbyUiBootstrap` 创建/复用 UIFrame，打开 **`LobbyMenuWindowController`**。
+3. **Single player**：调用 **`TryStartSoloMatch`**（本机 Host + 进 DeathMatch）。
 
 ### UI 框架（UIFrame）
 
 - 框架代码：`Assets/01_Project/Scripts/UIFramework/`
+- 业务界面命名：在角色名后加 **`Controller`**（如窗口 `LobbyMenuWindowController : WindowController`；面板以后用 `XxxPanelController : PanelController`）。
 - 全局入口：`UIFrameService.Ensure(UISettings)` → 创建一次 **UIFrame**，根挂 **`DontDestroyThisRoot`** 跨场景保留。
-- Lobby 启动：`LobbyUiBootstrap`（场景物体）打开 Window **`LobbyMenu`**（`LobbyMenuWindow`）。
+- Lobby 启动：`LobbyUiBootstrap` 打开 ScreenId **`LobbyMenuWindowController`**。
+- 结算：`MatchManager` 结束时 `OpenWindow(**EndGameWindowController**)`（弹窗、无动画）；Again → `RestartMatch()`。
 - 配置：`Assets/01_Project/Data/UISettings/UISettings.asset`  
   - **Template** = `UIFrame` 预制体  
-  - **Screens** = 各界面预制体（须带 `PanelController` / `WindowController`，**不要**把 UIFrame 放进 Screens）
-- 生成大厅界面预制体：菜单 **`FpsDemo → UI → Build LobbyMenu Prefab And Wire UISettings`**（若预制体缺失，编辑器也会自动生成一次）。
+  - **Screens** = 各界面预制体（须带业务 `*Controller`，**不要**把 UIFrame 放进 Screens）
+- 生成界面预制体（缺失时编辑器会自动生成）：  
+  - **`FpsDemo → UI → Build LobbyMenuWindowController Prefab And Wire UISettings`**  
+  - **`FpsDemo → UI → Build EndGameWindowController Prefab And Wire UISettings`**
 
 ---
 
@@ -188,7 +189,10 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
-| 2026-08-01 | **UIFrame 接入（Lobby）**：`UIFrameService` DDOL + `LobbyUiBootstrap` + `LobbyMenuWindow`；菜单生成 `LobbyMenu` 预制体并写入 UISettings |
+| 2026-08-01 | **结算**：去掉 `timeScale=0`；结束时仅禁本地玩法输入 + 解锁光标；`EndGameWindowController` 经 UIFrame 打开 |
+| 2026-08-01 | **结算 UI**：`EndGameWindowController` + `MatchManager` 经 UIFrame 打开；移除场景占位 Panel 引用 |
+| 2026-08-01 | **UI 命名**：`LobbyMenuWindowController`（原 Window 名 + Controller）；删除旧 `LobbyMenuView` / `LobbyMenuUiBuilder` |
+| 2026-08-01 | **UIFrame 接入（Lobby）**：`UIFrameService` DDOL + `LobbyUiBootstrap` + `LobbyMenuWindowController` |
 | 2026-08-01 | **单机进房（方案 A）**：`TryStartSoloMatch` = Solo Host；废弃「只 LoadScene」的离线进图（DeathMatch 无场景 Player） |
 | 2026-04-18 | **联机移动阶段一**：**`PlayerLocomotionInput.BodyYawY`**（本步 `YawDelta` 前身体世界 Y 角）经 **`SubmitLocomotionServerRpc`** 发往服务器；**`FpsPlayerMotor.SimulationStep`** 先对齐 **`BodyYawY`** 再 **`Rotate(YawDelta)`**，与客户端采样顺序一致，减轻仅靠增量积分导致的朝向漂移 |
 | 2026-04-18 | **Hitscan 基础延迟补偿**：**`MatchLagCompensationService`**（Host **`Start`** 挂在 **`MatchManager`** 上；**`LateUpdate`**、`DefaultExecutionOrder(80)` 采样 **`MatchParticipant`** 根位姿环形缓冲）；**`HitscanLagCompensationResolver`** 判伤前临时回溯目标 **`Time.timeAsDouble - rewind`** 再 **`HitscanShotResolver.Resolve`**；**`PlayerHitscanNetBridge`** Inspector **`_lagCompensationRewindSeconds`**（默认 0.1）；无服务或失败则回退无回溯 |
@@ -330,7 +334,7 @@ FpsHitscanWeapon.FireOnce
 | 组件 | 做什么 |
 |------|--------|
 | **`MatchParticipant`** | 挂在**参战单位根**（`Player`、每个人机根）；**显示名**、**是否本地玩家**；`OnEnable` 时进入静态列表 **`ActiveParticipants`**。 |
-| **`MatchManager`** | **单例**（场景一个）；`Start` 用当前列表初始化击杀表；**订阅 `CombatKillBus`**：击杀者根上须有 **`MatchParticipant`** 才记分；**自杀**（`Killer==Victim`）不计；**单机**：本地 **`unscaled`** 倒计时；**联机（Host 已监听且 `NetMatchManager` 已 Spawn）**：剩余时间与「已结束」读 **`NetMatchManager`** 的 **`NetworkVariable`**，服务器在 **`EndMatch`** 时标记结束；**目标击杀**；有人达标 → **真实时间延迟** → **`timeScale=0`** → **`MatchEnded`** + 可选占位 UI；**时间到**按击杀比胜负、**允许并列**。 |
+| **`MatchManager`** | **单例**（场景一个）；`Start` 用当前列表初始化击杀表；**订阅 `CombatKillBus`**：击杀者根上须有 **`MatchParticipant`** 才记分；**自杀**（`Killer==Victim`）不计；**单机**：本地 **`unscaled`** 倒计时；**联机（Host 已监听且 `NetMatchManager` 已 Spawn）**：剩余时间与「已结束」读 **`NetMatchManager`** 的 **`NetworkVariable`**，服务器在 **`EndMatch`** 时标记结束；**目标击杀**；有人达标 → **真实时间延迟** → 解锁光标 / 禁本地输入 → **`MatchEnded`** + **`EndGameWindowController`**；**时间到**按击杀比胜负、**允许并列**。 |
 | **`NetMatchManager`** | 与 **`MatchManager`** 同物体；需 **`NetworkObject`**。仅**服务器**递减 **`_remainingSeconds`**，归零时通知 **`MatchManager.NotifyAuthorityTimeExpiredFromNetwork()`**；**`MarkEndedOnServer`** 在服务器 **`EndMatch`** 时写入 **`_matchEnded`**，使各端 HUD 的 **`RemainingMatchSeconds`** / **`IsMatchOver`** 一致。 |
 
 **数据流（击杀 → 记分）**

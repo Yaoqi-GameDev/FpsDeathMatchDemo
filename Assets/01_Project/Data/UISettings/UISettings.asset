@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   templateUIPrefab: {fileID: 2991792084289063556, guid: b926842f9820b894aa722fcf0f6ab9fb, type: 3}
   screensToRegister:
-  - {fileID: 7617947546680038233, guid: 770bf59ffaa84df47a1006f1e293ae33, type: 3}
+  - {fileID: 6482209139170804237, guid: 8727fba90701717439fe4c6522c62e3b, type: 3}
+  - {fileID: 6994811579917358485, guid: e934ec2ada5e7514d80f273bcc923540, type: 3}
   deactivateScreenGOs: 1
