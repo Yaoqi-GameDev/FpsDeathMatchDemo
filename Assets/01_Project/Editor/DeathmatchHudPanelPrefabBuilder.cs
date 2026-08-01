@@ -218,9 +218,8 @@ public static class DeathmatchHudPanelPrefabBuilder
                 EditorUtility.DisplayDialog(
                     "DeathmatchHudPanelController",
                     changed
-                        ? "Added Ammo / Crosshair / HurtOverlay / KillStreak to the HUD prefab.\n" +
-                          "You can nudge positions in the prefab; scene GamePlayCanvas duplicates can stay off."
-                        : "Ammo / Crosshair / HurtOverlay / KillStreak already exist on the HUD prefab.",
+                        ? "Added missing gameplay widgets (Ammo / Crosshair / Hurt / KillStreak / RTT) to the HUD prefab."
+                        : "Gameplay widgets already exist on the HUD prefab.",
                     "OK");
             }
         }
@@ -259,6 +258,12 @@ public static class DeathmatchHudPanelPrefabBuilder
         if (rootRt.Find("KillStreakPlaceholder") == null)
         {
             CreateKillStreak(rootRt);
+            changed = true;
+        }
+
+        if (rootRt.Find("ClientLatency") == null)
+        {
+            CreateClientLatency(rootRt);
             changed = true;
         }
 
@@ -333,6 +338,22 @@ public static class DeathmatchHudPanelPrefabBuilder
         var so = new SerializedObject(placeholder);
         so.FindProperty("_streakText").objectReferenceValue = tmp;
         so.FindProperty("_format").stringValue = "Killx{0}";
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void CreateClientLatency(RectTransform rootRt)
+    {
+        var tmp = CreateTmp(rootRt, "ClientLatency", "RTT: -- ms", 22f, TextAlignmentOptions.TopLeft);
+        tmp.color = new Color(1f, 1f, 1f, 0.92f);
+        var rt = tmp.rectTransform;
+        rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0f, 1f);
+        rt.anchoredPosition = new Vector2(12f, -12f);
+        rt.sizeDelta = new Vector2(480f, 40f);
+
+        var hud = rt.gameObject.AddComponent<ClientLatencyHud>();
+        var so = new SerializedObject(hud);
+        so.FindProperty("_label").objectReferenceValue = tmp;
         so.ApplyModifiedPropertiesWithoutUndo();
     }
 

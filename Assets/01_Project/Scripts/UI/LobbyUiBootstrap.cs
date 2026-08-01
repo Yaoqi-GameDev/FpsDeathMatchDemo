@@ -4,7 +4,7 @@ using UnityEngine;
 namespace FpsDemo.UI
 {
     /// <summary>
-    /// 挂在 Lobby 场景（非 DDOL 物体）上：确保全局 UIFrame，打开大厅窗，并关掉旧 Canvas。
+    /// 挂在 Lobby 场景（非 DDOL 物体）上：确保全局 UIFrame 并打开大厅窗。
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-100)]
@@ -15,17 +15,11 @@ namespace FpsDemo.UI
         [Tooltip("打开大厅前是否 HideAll。")]
         [SerializeField] private bool _hideAllBeforeOpen = true;
 
-        [Tooltip("禁用场景里名为 Canvas 且含 LobbyRoot 的旧大厅（已被框架 UI 替代）。")]
-        [SerializeField] private bool _disableLegacyLobbyCanvas = true;
-
         private void Awake()
         {
             var frame = UIFrameService.Ensure(_uiSettings);
             if (frame == null)
                 return;
-
-            if (_disableLegacyLobbyCanvas)
-                DisableLegacyLobbyCanvas();
 
             if (_hideAllBeforeOpen)
                 frame.HideAll(animate: false);
@@ -40,24 +34,6 @@ namespace FpsDemo.UI
             }
 
             frame.OpenWindow(LobbyMenuWindowController.ScreenId);
-        }
-
-        private static void DisableLegacyLobbyCanvas()
-        {
-#pragma warning disable CS0618
-            var canvases = Object.FindObjectsOfType<Canvas>();
-#pragma warning restore CS0618
-            for (int i = 0; i < canvases.Length; i++)
-            {
-                var c = canvases[i];
-                if (c == null)
-                    continue;
-                if (c.GetComponentInParent<UIFrame>() != null)
-                    continue;
-                if (c.transform.Find(LobbyMenuWindowController.ContentRootName) == null)
-                    continue;
-                c.gameObject.SetActive(false);
-            }
         }
     }
 }

@@ -162,17 +162,11 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 - 业务界面命名：在角色名后加 **`Controller`**（如窗口 `LobbyMenuWindowController : WindowController`；面板 `DeathmatchHudPanelController : PanelController`）。
 - 全局入口：`UIFrameService.Ensure(UISettings)` → 创建一次 **UIFrame**，根挂 **`DontDestroyThisRoot`** 跨场景保留。
 - Lobby 启动：`LobbyUiBootstrap` 打开 ScreenId **`LobbyMenuWindowController`**。
-- 局内 HUD：`MatchManager.Start` → `ShowPanel(**DeathmatchHudPanelController**)`（时间 / 排行 / 击杀 / 血量 + 弹药 / 准星 / 受伤红闪 / 连杀，做法 A 同一 Panel）；结算时 `HidePanel`。
+- 局内 HUD：`MatchManager.Start` → `ShowPanel(**DeathmatchHudPanelController**)`（时间 / 排行 / 击杀 / 血量 + 弹药 / 准星 / 受伤 / 连杀 / RTT，同一 Panel）；结算时 `HidePanel`。
 - 结算：`MatchManager` 结束时 `OpenWindow(**EndGameWindowController**)`（弹窗、无动画）；Again → `RestartMatch()`。
-- 配置：`Assets/01_Project/Data/UISettings/UISettings.asset`  
-  - **Template** = `UIFrame` 预制体  
-  - **Screens** = 各界面预制体（须带业务 `*Controller`，**不要**把 UIFrame 放进 Screens）
-- 生成界面预制体（缺失时编辑器会自动生成）：  
-  - **`FpsDemo → UI → Build LobbyMenuWindowController Prefab And Wire UISettings`**  
-  - **`FpsDemo → UI → Build EndGameWindowController Prefab And Wire UISettings`**  
-  - **`FpsDemo → UI → Build DeathmatchHudPanelController Prefab And Wire UISettings`**  
-  - **`FpsDemo → UI → Ensure Gameplay Widgets On DeathmatchHudPanelController Prefab`**（只补弹药/准星/受伤/连杀，不重建你微调过的布局）
-- 场景 **`GamePlayCanvas`** 下旧 Ammo / Crosshair / HurtOverlay / DeathmatchHUD 已关掉；RTT（`ClientLatencyHud`）仍可后迁。
+- ScreenId：`LobbyMenuWindowController`、`EndGameWindowController`、`DeathmatchHudPanelController`。
+- 配置：`Assets/01_Project/Data/UISettings/UISettings.asset`（Template = UIFrame；Screens = 上述界面预制体）。
+- 菜单：`FpsDemo → UI → Build …` / `Ensure Gameplay Widgets On DeathmatchHudPanelController Prefab`（补缺件，含 RTT）。
 
 ---
 
@@ -193,6 +187,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-08-01 | **UI 收口**：精简 `LobbyUiBootstrap`；RTT 并进 HUD Panel；Lobby NetworkManager 去掉旧 `ClientLatencyHud` |
 | 2026-08-01 | **HUD 做法 A**：弹药/准星/受伤/连杀并进 `DeathmatchHudPanelController`；修联机晚绑定；场景旧 GamePlayCanvas 对应节点关掉 |
 | 2026-08-01 | **局内 HUD Panel**：`DeathmatchHudPanelController`；`MatchManager` `ShowPanel`；联机击杀条改调新 API；删除旧 `DeathmatchHudView` |
 | 2026-08-01 | **结算**：去掉 `timeScale=0`；结束时仅禁本地玩法输入 + 解锁光标；`EndGameWindowController` 经 UIFrame 打开 |
@@ -356,12 +351,12 @@ CombatKillBus.KillCommitted(KillReport)
 
 ### 死斗 HUD（`DeathmatchHudPanelController`）
 
-走 **UIFrame Panel**（做法 A：主 HUD + 弹药 / 准星 / 受伤 / 连杀同一预制体）：
+走 **UIFrame Panel**（做法 A：主 HUD + 弹药 / 准星 / 受伤 / 连杀 / RTT 同一预制体）：
 
-1. 菜单 **`Build DeathmatchHudPanelController…`**；若你已微调过布局，用 **`Ensure Gameplay Widgets…`** 只补缺件。  
+1. 菜单 **`Build DeathmatchHudPanelController…`**；若你已微调过布局，用 **`Ensure Gameplay Widgets…`** 只补缺件（含左上角 RTT）。  
 2. **`MatchManager.Start`** → `ShowPanel`；结算 → `HidePanel`。  
 3. 联机击杀条：`NetworkKillFeedBroadcaster` → `AppendKillFeedFromNetwork`。  
-4. 准星 / 受伤 / 连杀脚本会在运行时持续解析本地玩家（适配 NGO 晚生成）。
+4. 准星 / 受伤 / 连杀会在运行时持续解析本地玩家；RTT 仅客户端（含 Host）显示。
 
 ---
 
