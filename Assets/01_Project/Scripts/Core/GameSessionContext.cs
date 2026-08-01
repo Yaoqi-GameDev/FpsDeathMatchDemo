@@ -1,8 +1,9 @@
 namespace FpsDemo.Core
 {
     /// <summary>
-    /// Set before loading <see cref="LobbyNetSession"/> offline path; cleared when starting host/client.
-    /// Gameplay in DeathMatch can branch on <see cref="IsOfflineSession"/> without touching NGO types in core scripts.
+    /// Session flags shared across scenes without referencing NGO in gameplay scripts.
+    /// Lobby solo / create / join all clear this (<c>false</c>) — they use Host/Client so PlayerPrefab can spawn.
+    /// Reserved if a true no-NGO offline path is added later.
     /// </summary>
     public static class GameSessionContext
     {

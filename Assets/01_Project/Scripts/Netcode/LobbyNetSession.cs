@@ -8,7 +8,8 @@ using UnityEngine.SceneManagement;
 namespace FpsDemo.Netcode
 {
     /// <summary>
-    /// Lobby button actions: host + load match, client connect, or offline load. English user messages only.
+    /// Lobby entry points: create room (host), join (client), solo (local host). English user messages only.
+    /// DeathMatch has no in-scene Player — characters spawn only via <see cref="NetworkManager"/> PlayerPrefab after Host/Client starts.
     /// </summary>
     public static class LobbyNetSession
     {
@@ -44,6 +45,15 @@ namespace FpsDemo.Netcode
 
             nm.SceneManager.LoadScene(MatchSceneName, LoadSceneMode.Single);
             setHint?.Invoke("Hosting — loading match.");
+        }
+
+        /// <summary>
+        /// Solo play: same pipeline as <see cref="TryStartHostAndLoadMatch"/> (local Host + PlayerPrefab spawn).
+        /// Prefer this over a plain <c>LoadScene</c> — that would enter DeathMatch with no controllable player.
+        /// </summary>
+        public static void TryStartSoloMatch(Action<string> setHint)
+        {
+            TryStartHostAndLoadMatch(setHint, listenPortText: null);
         }
 
         /// <summary>Client uses transport address/port; do not call LoadScene — NGO syncs the active scene from the host.</summary>
@@ -86,18 +96,6 @@ namespace FpsDemo.Netcode
             }
 
             setHint?.Invoke($"Connecting to {addr}:{port}…");
-        }
-
-        /// <summary>No NGO session; load DeathMatch for local/offline flow. Clears any active listen state first.</summary>
-        public static void TryLoadOfflineMatch(Action<string> setHint)
-        {
-            var nm = NetworkManager.Singleton;
-            if (nm != null && (nm.IsClient || nm.IsServer))
-                nm.Shutdown();
-
-            GameSessionContext.SetOfflineSession(true);
-            SceneManager.LoadScene(MatchSceneBuildIndex);
-            setHint?.Invoke("Loading offline match.");
         }
 
         /// <summary>

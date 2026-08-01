@@ -125,7 +125,7 @@ namespace FpsDemo.UI
 
         private void OnSinglePlayerClicked()
         {
-            LobbyNetSession.TryLoadOfflineMatch(SetHint);
+            LobbyNetSession.TryStartSoloMatch(SetHint);
         }
 
         private void OnSettingsClicked()

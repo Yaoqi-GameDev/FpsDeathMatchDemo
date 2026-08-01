@@ -147,7 +147,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 | 场景 | 用途 |
 |------|------|
 | `Assets/01_Project/Scenes/Lobby.unity` | **大厅**：创建房间 / 加入 / 单机 / 设置（UI 用 **`LobbyMenuView`**）；**Build Settings 场景 0**；玩法仍在 DeathMatch。 |
-| `Assets/01_Project/Scenes/DeathMatch.unity` | **死斗与全部玩法**：移动、战斗、规则等均在本地于此场景开发与试玩。 |
+| `Assets/01_Project/Scenes/DeathMatch.unity` | **死斗与全部玩法**：场景内**不放 Player**；角色由 **NetworkManager.PlayerPrefab** 在 Host/Client 后生成。大厅 **Single player** = **Solo Host**（`LobbyNetSession.TryStartSoloMatch`），与创建房间同一生成链路。 |
 
 > 若场景职责有变更，请在本表与「变更记录」中同步更新。
 
@@ -156,7 +156,8 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 1. **Build Settings**：`File → Build Settings…` 将 **`Lobby`** 在列表**最上**（索引 **0**），**`DeathMatch`** 为 **1**（已配置时可跳过）。
 2. 打开 **`Lobby.unity`**，菜单 **`FpsDemo → Lobby → Build Or Refresh Lobby UI In Active Scene`**：在 **Canvas** 下生成 **`LobbyRoot`**（英文文案，避免字体缺字）与 **`SettingsPanel`**，并自动填好 **`LobbyMenuView`** 引用；**保存场景**（Ctrl+S）后层级会写进 `Lobby.unity`。
 3. 也可在 Hierarchy **手动**搭界面；**未**在 Inspector 拖引用时，可按与菜单相同的命名（如 `LobbyRoot/BtnCreateRoom`）由脚本 **`TryWireFromHierarchyIfNeeded`** 自动绑定。
-4. Play：Console 出现 **`[Lobby]`** 日志；后续在此接 **`NetworkManager`** / **`LoadScene`**。
+4. Play：Console 出现 **`[Lobby]`** 日志。
+5. **Single player**：调用 **`TryStartSoloMatch`**（内部即本机 Host + 进 DeathMatch），勿再只 `LoadScene`（否则无 PlayerPrefab、进图无角色）。
 
 ---
 
@@ -177,6 +178,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-08-01 | **单机进房（方案 A）**：`TryStartSoloMatch` = Solo Host；废弃「只 LoadScene」的离线进图（DeathMatch 无场景 Player） |
 | 2026-04-18 | **联机移动阶段一**：**`PlayerLocomotionInput.BodyYawY`**（本步 `YawDelta` 前身体世界 Y 角）经 **`SubmitLocomotionServerRpc`** 发往服务器；**`FpsPlayerMotor.SimulationStep`** 先对齐 **`BodyYawY`** 再 **`Rotate(YawDelta)`**，与客户端采样顺序一致，减轻仅靠增量积分导致的朝向漂移 |
 | 2026-04-18 | **Hitscan 基础延迟补偿**：**`MatchLagCompensationService`**（Host **`Start`** 挂在 **`MatchManager`** 上；**`LateUpdate`**、`DefaultExecutionOrder(80)` 采样 **`MatchParticipant`** 根位姿环形缓冲）；**`HitscanLagCompensationResolver`** 判伤前临时回溯目标 **`Time.timeAsDouble - rewind`** 再 **`HitscanShotResolver.Resolve`**；**`PlayerHitscanNetBridge`** Inspector **`_lagCompensationRewindSeconds`**（默认 0.1）；无服务或失败则回退无回溯 |
 | 2026-04-18 | **Lobby UI**：移除运行时生成；**`LobbyMenuUiBuilder`** 编辑器菜单在场景中搭建 **`LobbyRoot`** + 绑定 **`LobbyMenuView`**；**`LobbyMenuView`** 可选按层级命名自动引用 |
