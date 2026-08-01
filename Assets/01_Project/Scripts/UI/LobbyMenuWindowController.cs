@@ -9,6 +9,7 @@ namespace FpsDemo.UI
 {
     /// <summary>
     /// Lobby window. Prefab name / ScreenId: <c>LobbyMenuWindowController</c>.
+    /// Settings opens <see cref="SettingsWindowController"/> via UIFrame (window stack).
     /// </summary>
     public sealed class LobbyMenuWindowController : WindowController
     {
@@ -27,7 +28,6 @@ namespace FpsDemo.UI
 
         [Header("Optional")]
         [SerializeField] private TMP_Text _hintText;
-        [SerializeField] private GameObject _settingsPlaceholderPanel;
 
         protected override void Awake()
         {
@@ -73,13 +73,6 @@ namespace FpsDemo.UI
 
             if (_hintText == null)
                 _hintText = FindUnderRoot<TMP_Text>(root, "Hint");
-
-            if (_settingsPlaceholderPanel == null)
-            {
-                var panel = transform.Find("SettingsPanel");
-                if (panel != null)
-                    _settingsPlaceholderPanel = panel.gameObject;
-            }
         }
 
         private static T FindUnderRoot<T>(Transform lobbyRoot, string objectName) where T : Component
@@ -133,10 +126,23 @@ namespace FpsDemo.UI
 
         private void OnSettingsClicked()
         {
-            if (_settingsPlaceholderPanel != null)
-                _settingsPlaceholderPanel.SetActive(!_settingsPlaceholderPanel.activeSelf);
-            SetHint("Settings placeholder — audio / sensitivity later.");
-            Debug.Log("[Lobby] Settings (placeholder).");
+            var frame = UIFrameService.Frame;
+            if (frame == null)
+            {
+                SetHint("No UIFrame.");
+                return;
+            }
+
+            if (!frame.IsScreenRegistered(SettingsWindowController.ScreenId))
+            {
+                SetHint("Settings screen not registered. Run FpsDemo/UI/Enrich UI Framework Features.");
+                Debug.LogError(
+                    "[Lobby] Screen '" + SettingsWindowController.ScreenId + "' not registered.",
+                    this);
+                return;
+            }
+
+            frame.OpenWindow(SettingsWindowController.ScreenId);
         }
 
         /// <summary>进对局后关掉大厅窗，避免 UIFrame DDOL 后仍盖在 DeathMatch 上。</summary>

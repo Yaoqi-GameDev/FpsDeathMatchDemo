@@ -59,7 +59,6 @@ public static class LobbyMenuPrefabBuilder
 
         var window = rootGo.AddComponent<LobbyMenuWindowController>();
         var lobbyRoot = BuildLobbyRoot(rootRt);
-        var settingsPanel = BuildSettingsPanel(rootRt);
 
         var so = new SerializedObject(window);
         so.FindProperty("_createRoomButton").objectReferenceValue =
@@ -76,7 +75,6 @@ public static class LobbyMenuPrefabBuilder
             FindBuilt<TMP_InputField>(lobbyRoot, "PortField");
         so.FindProperty("_hintText").objectReferenceValue =
             FindBuilt<TMP_Text>(lobbyRoot, "Hint");
-        so.FindProperty("_settingsPlaceholderPanel").objectReferenceValue = settingsPanel;
 
         // Default window props: force foreground, hide when another window opens.
         var props = so.FindProperty("properties");
@@ -240,32 +238,6 @@ public static class LobbyMenuPrefabBuilder
             leF.preferredWidth = 118f;
             leF.minWidth = 100f;
         }
-    }
-
-    private static GameObject BuildSettingsPanel(RectTransform parent)
-    {
-        var panelGo = new GameObject("SettingsPanel", typeof(RectTransform));
-        var panel = panelGo.GetComponent<RectTransform>();
-        panel.SetParent(parent, false);
-        StretchFull(panel);
-        panelGo.SetActive(false);
-        var dim = panelGo.AddComponent<Image>();
-        dim.color = new Color(0f, 0f, 0f, 0.62f);
-
-        var box = new GameObject("Box", typeof(RectTransform));
-        var boxRt = box.GetComponent<RectTransform>();
-        box.transform.SetParent(panel, false);
-        boxRt.anchorMin = boxRt.anchorMax = new Vector2(0.5f, 0.5f);
-        boxRt.sizeDelta = new Vector2(420f, 240f);
-        box.AddComponent<Image>().color = new Color(0.12f, 0.13f, 0.17f, 1f);
-
-        var txt = CreateTmpText(boxRt, "SettingsText", "Audio and controls — coming soon.", 20f, TextAlignmentOptions.Center);
-        txt.rectTransform.anchorMin = Vector2.zero;
-        txt.rectTransform.anchorMax = Vector2.one;
-        txt.rectTransform.offsetMin = new Vector2(28f, 28f);
-        txt.rectTransform.offsetMax = new Vector2(-28f, -28f);
-        txt.color = new Color(0.85f, 0.87f, 0.92f, 1f);
-        return panelGo;
     }
 
     private static void StretchFull(RectTransform rt)

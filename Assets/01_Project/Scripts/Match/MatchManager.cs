@@ -94,7 +94,7 @@ namespace FpsDemo.Match
 
             // 再来一局后 UIFrame 可能仍开着上一局结算窗。
             CloseEndGameWindowIfOpen();
-            ShowDeathmatchHudPanel();
+            ShowMatchHudPanels();
 
             NetMatchManager.NotifyMatchSceneReadyForPossibleRematchReset();
 
@@ -310,12 +310,12 @@ namespace FpsDemo.Match
             return participant != null && _kills.TryGetValue(participant, out int k) ? k : 0;
         }
 
-        private void ShowDeathmatchHudPanel()
+        private void ShowMatchHudPanels()
         {
             var frame = UIFrameService.Frame ?? UIFrameService.Ensure(_uiSettings);
             if (frame == null)
             {
-                Debug.LogWarning("[MatchHud] No UIFrame; Deathmatch HUD panel skipped.");
+                Debug.LogWarning("[MatchHud] No UIFrame; HUD panels skipped.");
                 return;
             }
 
@@ -325,11 +325,14 @@ namespace FpsDemo.Match
             {
                 Debug.LogError(
                     "[MatchHud] Screen '" + DeathmatchHudPanelController.ScreenId +
-                    "' not registered. Run FpsDemo/UI/Build DeathmatchHudPanelController Prefab And Wire UISettings, then restart Play.");
+                    "' not registered. Run FpsDemo/UI/Enrich UI Framework Features, then restart Play.");
                 return;
             }
 
             frame.ShowPanel(DeathmatchHudPanelController.ScreenId);
+
+            if (frame.IsScreenRegistered(HurtOverlayPanelController.ScreenId))
+                frame.ShowPanel(HurtOverlayPanelController.ScreenId);
         }
 
         private void ShowEndGameWindow(MatchResult result)
@@ -353,6 +356,8 @@ namespace FpsDemo.Match
 
             if (frame.IsScreenRegistered(DeathmatchHudPanelController.ScreenId))
                 frame.HidePanel(DeathmatchHudPanelController.ScreenId);
+            if (frame.IsScreenRegistered(HurtOverlayPanelController.ScreenId))
+                frame.HidePanel(HurtOverlayPanelController.ScreenId);
 
             if (!frame.IsScreenRegistered(EndGameWindowController.ScreenId))
             {

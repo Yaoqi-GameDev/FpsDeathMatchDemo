@@ -12,8 +12,10 @@ public static class UiSettingsScreenList
     public static readonly string[] ScreenPrefabPaths =
     {
         ScreensDir + "/LobbyMenuWindowController.prefab",
+        ScreensDir + "/SettingsWindowController.prefab",
         ScreensDir + "/EndGameWindowController.prefab",
         ScreensDir + "/DeathmatchHudPanelController.prefab",
+        ScreensDir + "/HurtOverlayPanelController.prefab",
     };
 
     public static void WireAllPresentScreens()

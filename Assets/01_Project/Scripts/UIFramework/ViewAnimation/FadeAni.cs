@@ -58,7 +58,7 @@ namespace UIFramework
                 canvasGroup.alpha = Mathf.Lerp(endValue, startValue, timer / fadeDuration);
             }
             else {
-                canvasGroup.alpha = 1f;
+                canvasGroup.alpha = endValue;
                 if (currentAction != null) {
                     currentAction();
                 }

@@ -13,8 +13,9 @@ namespace FpsDemo.UI
     /// <summary>
     /// Deathmatch HUD panel. Prefab / ScreenId: <c>DeathmatchHudPanelController</c>.
     /// Core: timer / leaderboard / kill feed / health.
-    /// Same prefab also hosts gameplay widgets: <see cref="AmmoHub"/>, <see cref="FpsCrosshairHitFeedback"/>,
-    /// <see cref="FpsPlayerHurtOverlayFeedback"/>, <see cref="KillStreakHudPlaceholder"/>, <see cref="ClientLatencyHud"/>.
+    /// Same prefab also hosts: <see cref="AmmoHub"/>, <see cref="FpsCrosshairHitFeedback"/>,
+    /// <see cref="KillStreakHudPlaceholder"/>, <see cref="ClientLatencyHud"/>.
+    /// Hurt flash is a separate Prioritary panel: <see cref="HurtOverlayPanelController"/>.
     /// Network kill feed via <see cref="AppendKillFeedFromNetwork"/>.
     /// </summary>
     public sealed class DeathmatchHudPanelController : PanelController

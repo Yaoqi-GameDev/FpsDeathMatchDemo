@@ -40,10 +40,7 @@ public static class EndGameWindowPrefabBuilder
         var rootGo = new GameObject(EndGameWindowController.ScreenId, typeof(RectTransform));
         var rootRt = rootGo.GetComponent<RectTransform>();
         StretchFull(rootRt);
-
-        var dim = rootGo.AddComponent<Image>();
-        dim.color = new Color(0f, 0f, 0f, 0.72f);
-        dim.raycastTarget = true;
+        // 遮罩用 UIFrame DarkenBG（isPopup），勿在窗体根上再画一层 Image。
 
         var window = rootGo.AddComponent<EndGameWindowController>();
 

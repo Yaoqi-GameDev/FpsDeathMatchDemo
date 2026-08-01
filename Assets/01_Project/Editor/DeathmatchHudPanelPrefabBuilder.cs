@@ -218,7 +218,7 @@ public static class DeathmatchHudPanelPrefabBuilder
                 EditorUtility.DisplayDialog(
                     "DeathmatchHudPanelController",
                     changed
-                        ? "Added missing gameplay widgets (Ammo / Crosshair / Hurt / KillStreak / RTT) to the HUD prefab."
+                        ? "Added missing gameplay widgets (Ammo / Crosshair / KillStreak / RTT) to the HUD prefab.\nHurt is a separate Prioritary panel."
                         : "Gameplay widgets already exist on the HUD prefab.",
                     "OK");
             }
@@ -237,11 +237,7 @@ public static class DeathmatchHudPanelPrefabBuilder
 
         bool changed = false;
 
-        if (rootRt.Find("HurtOverlay") == null)
-        {
-            CreateHurtOverlay(rootRt);
-            changed = true;
-        }
+        // HurtOverlay 已拆成 Prioritary Panel（HurtOverlayPanelController），勿再塞进主 HUD。
 
         if (rootRt.Find("Crosshair") == null)
         {
@@ -267,26 +263,7 @@ public static class DeathmatchHudPanelPrefabBuilder
             changed = true;
         }
 
-        // Hurt 画在最底层，其它 HUD 盖在上面。
-        var hurt = rootRt.Find("HurtOverlay");
-        if (hurt != null)
-            hurt.SetAsFirstSibling();
-
         return changed;
-    }
-
-    private static void CreateHurtOverlay(RectTransform rootRt)
-    {
-        var rt = CreateChild(rootRt, "HurtOverlay");
-        StretchFull(rt);
-        var image = rt.gameObject.AddComponent<Image>();
-        image.color = new Color(0f, 0f, 0f, 0f);
-        image.raycastTarget = false;
-
-        var feedback = rt.gameObject.AddComponent<FpsPlayerHurtOverlayFeedback>();
-        var so = new SerializedObject(feedback);
-        so.FindProperty("_overlayImage").objectReferenceValue = image;
-        so.ApplyModifiedPropertiesWithoutUndo();
     }
 
     private static void CreateCrosshair(RectTransform rootRt)

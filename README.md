@@ -164,9 +164,10 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 - Lobby 启动：`LobbyUiBootstrap` 打开 ScreenId **`LobbyMenuWindowController`**。
 - 局内 HUD：`MatchManager.Start` → `ShowPanel(**DeathmatchHudPanelController**)`（时间 / 排行 / 击杀 / 血量 + 弹药 / 准星 / 受伤 / 连杀 / RTT，同一 Panel）；结算时 `HidePanel`。
 - 结算：`MatchManager` 结束时 `OpenWindow(**EndGameWindowController**)`（弹窗、无动画）；Again → `RestartMatch()`。
-- ScreenId：`LobbyMenuWindowController`、`EndGameWindowController`、`DeathmatchHudPanelController`。
+- ScreenId：`LobbyMenuWindowController`、`SettingsWindowController`（Popup + DarkenBG）、`EndGameWindowController`（Popup）、`DeathmatchHudPanelController`、`HurtOverlayPanelController`（`PanelPriority.Prioritary`）。
+- 窗口开关可用 **`FadeAni`**（AnimIn / AnimOut）。
 - 配置：`Assets/01_Project/Data/UISettings/UISettings.asset`（Template = UIFrame；Screens = 上述界面预制体）。
-- 菜单：`FpsDemo → UI → Build …` / `Ensure Gameplay Widgets On DeathmatchHudPanelController Prefab`（补缺件，含 RTT）。
+- 菜单：`FpsDemo → UI → Enrich UI Framework Features`（去占位、接 Fade / Settings / Hurt 层）；另有各 `Build …` / `Ensure Gameplay Widgets…`。
 
 ---
 
@@ -187,6 +188,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-08-01 | **UI 框架加深**：去大厅 SettingsPanel / 结算自画遮罩；`FadeAni`；`SettingsWindowController` Popup；`HurtOverlayPanelController` Prioritary；菜单 Enrich |
 | 2026-08-01 | **UI 收口**：精简 `LobbyUiBootstrap`；RTT 并进 HUD Panel；Lobby NetworkManager 去掉旧 `ClientLatencyHud` |
 | 2026-08-01 | **HUD 做法 A**：弹药/准星/受伤/连杀并进 `DeathmatchHudPanelController`；修联机晚绑定；场景旧 GamePlayCanvas 对应节点关掉 |
 | 2026-08-01 | **局内 HUD Panel**：`DeathmatchHudPanelController`；`MatchManager` `ShowPanel`；联机击杀条改调新 API；删除旧 `DeathmatchHudView` |
