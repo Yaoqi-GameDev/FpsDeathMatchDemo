@@ -159,6 +159,16 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 4. Play：Console 出现 **`[Lobby]`** 日志。
 5. **Single player**：调用 **`TryStartSoloMatch`**（内部即本机 Host + 进 DeathMatch），勿再只 `LoadScene`（否则无 PlayerPrefab、进图无角色）。
 
+### UI 框架（UIFrame）
+
+- 框架代码：`Assets/01_Project/Scripts/UIFramework/`
+- 全局入口：`UIFrameService.Ensure(UISettings)` → 创建一次 **UIFrame**，根挂 **`DontDestroyThisRoot`** 跨场景保留。
+- Lobby 启动：`LobbyUiBootstrap`（场景物体）打开 Window **`LobbyMenu`**（`LobbyMenuWindow`）。
+- 配置：`Assets/01_Project/Data/UISettings/UISettings.asset`  
+  - **Template** = `UIFrame` 预制体  
+  - **Screens** = 各界面预制体（须带 `PanelController` / `WindowController`，**不要**把 UIFrame 放进 Screens）
+- 生成大厅界面预制体：菜单 **`FpsDemo → UI → Build LobbyMenu Prefab And Wire UISettings`**（若预制体缺失，编辑器也会自动生成一次）。
+
 ---
 
 ## 文档维护约定
@@ -178,6 +188,7 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-08-01 | **UIFrame 接入（Lobby）**：`UIFrameService` DDOL + `LobbyUiBootstrap` + `LobbyMenuWindow`；菜单生成 `LobbyMenu` 预制体并写入 UISettings |
 | 2026-08-01 | **单机进房（方案 A）**：`TryStartSoloMatch` = Solo Host；废弃「只 LoadScene」的离线进图（DeathMatch 无场景 Player） |
 | 2026-04-18 | **联机移动阶段一**：**`PlayerLocomotionInput.BodyYawY`**（本步 `YawDelta` 前身体世界 Y 角）经 **`SubmitLocomotionServerRpc`** 发往服务器；**`FpsPlayerMotor.SimulationStep`** 先对齐 **`BodyYawY`** 再 **`Rotate(YawDelta)`**，与客户端采样顺序一致，减轻仅靠增量积分导致的朝向漂移 |
 | 2026-04-18 | **Hitscan 基础延迟补偿**：**`MatchLagCompensationService`**（Host **`Start`** 挂在 **`MatchManager`** 上；**`LateUpdate`**、`DefaultExecutionOrder(80)` 采样 **`MatchParticipant`** 根位姿环形缓冲）；**`HitscanLagCompensationResolver`** 判伤前临时回溯目标 **`Time.timeAsDouble - rewind`** 再 **`HitscanShotResolver.Resolve`**；**`PlayerHitscanNetBridge`** Inspector **`_lagCompensationRewindSeconds`**（默认 0.1）；无服务或失败则回退无回溯 |

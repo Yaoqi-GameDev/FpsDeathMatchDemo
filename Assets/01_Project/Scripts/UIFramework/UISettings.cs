@@ -21,10 +21,18 @@ namespace UIFramework
         /// 创建一个UI Frame对象
         /// </summary>
         public UIFrame CreateUIInstance(bool instanceAndRegisterScreens = true) {
+            if (templateUIPrefab == null) {
+                Debug.LogError("[UISettings] templateUIPrefab is not assigned on " + name);
+                return null;
+            }
+
             var newUI = Instantiate(templateUIPrefab);
 
-            if (instanceAndRegisterScreens) {
+            if (instanceAndRegisterScreens && screensToRegister != null) {
                 foreach (var screen in screensToRegister) {
+                    if (screen == null)
+                        continue;
+
                     var screenInstance = Instantiate(screen);
                     var screenController = screenInstance.GetComponent<IScreenController>();
 
@@ -35,7 +43,7 @@ namespace UIFramework
                         }
                     }
                     else {
-                        Debug.LogError("[UIConfig] Screen doesn't contain a ScreenController! Skipping " + screen.name);
+                        Debug.LogError("[UISettings] Screen doesn't contain a ScreenController! Skipping " + screen.name);
                     }
                 }
             }
@@ -44,12 +52,18 @@ namespace UIFramework
         }
         
         private void OnValidate() {
+            if (screensToRegister == null) {
+                screensToRegister = new List<GameObject>();
+                return;
+            }
+
             List<GameObject> objectsToRemove = new List<GameObject>();
-            for(int i = 0; i < screensToRegister.Count; i++) {
-                var screenCtl = screensToRegister[i].GetComponent<IScreenController>();
-                if (screenCtl == null) {
-                    objectsToRemove.Add(screensToRegister[i]);
-                }
+            for (int i = 0; i < screensToRegister.Count; i++) {
+                var go = screensToRegister[i];
+                if (go == null)
+                    continue;
+                if (go.GetComponent<IScreenController>() == null)
+                    objectsToRemove.Add(go);
             }
 
             if (objectsToRemove.Count > 0) {
@@ -59,6 +73,6 @@ namespace UIFramework
                     screensToRegister.Remove(obj);
                 }
             }
-        }        
+        }
     }
 }
