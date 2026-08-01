@@ -1,4 +1,5 @@
 using FpsDemo.Match;
+using FpsDemo.UI;
 using UnityEngine;
 
 namespace FpsDemo.Fps
@@ -34,13 +35,13 @@ namespace FpsDemo.Fps
                 return;
 
             bool matchOver = MatchManager.Instance != null && MatchManager.Instance.IsMatchOver;
+            bool uiKeepsCursorFree = matchOver || InMatchPauseMenuWindowController.IsOpen;
 
-            if (Input.GetKeyDown(KeyCode.Escape))
-                UnlockCursor();
-            if (!matchOver && Input.GetMouseButtonDown(0))
+            // ESC 由 InMatchPauseMenuInput 开暂停菜单；此处勿与点击 UI 抢光标。
+            if (!uiKeepsCursorFree && Input.GetMouseButtonDown(0))
                 LockCursor();
 
-            if (matchOver)
+            if (matchOver || InMatchPauseMenuWindowController.IsOpen)
                 return;
 
             float pitchDelta = _input.LookDelta.y;

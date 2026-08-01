@@ -401,8 +401,8 @@ GameObject:
   - component: {fileID: 6513706223709445224}
   - component: {fileID: 1535775697513817474}
   - component: {fileID: 2459498392705081834}
-  - component: {fileID: 7267180928168526811}
-  - component: {fileID: 2364505568023430984}
+  - component: {fileID: 1260938238349027896}
+  - component: {fileID: 8568817858297191314}
   m_Layer: 0
   m_Name: EndGameWindowController
   m_TagString: Untagged
@@ -450,8 +450,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5e6f708192a4b5c6d7e8f901a2b3c4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animIn: {fileID: 7267180928168526811}
-  animOut: {fileID: 2364505568023430984}
+  animIn: {fileID: 1260938238349027896}
+  animOut: {fileID: 8568817858297191314}
   properties:
     hideOnForegroundLost: 0
     windowQueuePriority: 0
@@ -471,7 +471,7 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &7267180928168526811
+--- !u!114 &1260938238349027896
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -485,7 +485,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   fadeDuration: 0.2
   fadeOut: 0
---- !u!114 &2364505568023430984
+--- !u!114 &8568817858297191314
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

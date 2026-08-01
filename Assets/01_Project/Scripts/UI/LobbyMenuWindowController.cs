@@ -145,12 +145,14 @@ namespace FpsDemo.UI
             frame.OpenWindow(SettingsWindowController.ScreenId);
         }
 
-        /// <summary>进对局后关掉大厅窗，避免 UIFrame DDOL 后仍盖在 DeathMatch 上。</summary>
+        /// <summary>进对局后立刻关窗（无 Fade），避免 DDOL 大厅窗 alpha 卡在 0。</summary>
         private void TryCloseAfterNetworkStarted()
         {
             var nm = NetworkManager.Singleton;
-            if (nm != null && nm.IsListening)
-                UI_Close();
+            if (nm == null || !nm.IsListening)
+                return;
+
+            UIFrameService.CloseAllWindowsImmediate();
         }
 
         private void SetHint(string message)

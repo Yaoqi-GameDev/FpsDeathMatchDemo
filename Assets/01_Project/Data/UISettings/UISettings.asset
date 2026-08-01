@@ -16,6 +16,7 @@ MonoBehaviour:
   screensToRegister:
   - {fileID: 6482209139170804237, guid: 8727fba90701717439fe4c6522c62e3b, type: 3}
   - {fileID: 1295742950857430140, guid: c597cbec070c7af49a812a0f2dc4083c, type: 3}
+  - {fileID: 3942805167070961344, guid: 9db14aee9c863894ba1314988342fbf4, type: 3}
   - {fileID: 6994811579917358485, guid: e934ec2ada5e7514d80f273bcc923540, type: 3}
   - {fileID: 2467071541456623094, guid: 7fb71e7502e43144b86a5872b341c19e, type: 3}
   - {fileID: 1811002688683277277, guid: d552311c1bd3ad04e97bf71e52d5f60f, type: 3}

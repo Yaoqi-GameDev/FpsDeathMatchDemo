@@ -95,6 +95,11 @@ namespace FpsDemo.Match
             // 再来一局后 UIFrame 可能仍开着上一局结算窗。
             CloseEndGameWindowIfOpen();
             ShowMatchHudPanels();
+            if (UIFrameService.HasFrame)
+                UIFrameService.DisableExtraEventSystems(UIFrameService.Frame.transform);
+
+            if (GetComponent<InMatchPauseMenuInput>() == null)
+                gameObject.AddComponent<InMatchPauseMenuInput>();
 
             NetMatchManager.NotifyMatchSceneReadyForPossibleRematchReset();
 

@@ -35,7 +35,7 @@ namespace FpsDemo.UI
             _bodyText.text =
                 "Settings (placeholder)\n\n" +
                 "Sensitivity / invert Y / audio can plug in here later.\n" +
-                "Close returns to the lobby via UIFrame window history.";
+                "Close returns to the previous window (lobby or pause menu).";
         }
 
         private void OnCloseClicked()

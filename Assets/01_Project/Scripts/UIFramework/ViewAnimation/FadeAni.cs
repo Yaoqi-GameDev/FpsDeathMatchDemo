@@ -21,6 +21,23 @@ namespace UIFramework
 
         private bool shouldAnimate;
 
+        /// <summary>
+        /// 打断渐变并落到指定透明度；若有未完成回调则执行（用于解除 UIFrame 过渡期对 GraphicRaycaster 的锁定）。
+        /// </summary>
+        public void CancelAnimation(float finalAlpha)
+        {
+            shouldAnimate = false;
+            if (canvasGroup == null)
+                canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+                canvasGroup.alpha = finalAlpha;
+
+            var cb = currentAction;
+            currentAction = null;
+            if (cb != null)
+                cb();
+        }
+
         public override void Animate(Transform target, Action callWhenFinished) {
             if (currentAction != null) {
                 canvasGroup.alpha = endValue;

@@ -1,5 +1,6 @@
 using System;
 using FpsDemo.Core;
+using FpsDemo.UI;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -13,6 +14,8 @@ namespace FpsDemo.Netcode
     /// </summary>
     public static class LobbyNetSession
     {
+        public const string LobbySceneName = "Lobby";
+        public const int LobbySceneBuildIndex = 0;
         public const string MatchSceneName = "DeathMatch";
         public const int MatchSceneBuildIndex = 1;
 
@@ -54,6 +57,27 @@ namespace FpsDemo.Netcode
         public static void TryStartSoloMatch(Action<string> setHint)
         {
             TryStartHostAndLoadMatch(setHint, listenPortText: null);
+        }
+
+        /// <summary>
+        /// Leave match: close UI (no anim), shutdown NGO but <b>keep</b> NetworkManager (DDOL),
+        /// load Lobby. Scene 里若再有一份 NM，由 <see cref="LobbyNetworkManagerGuard"/> 销毁重复项。
+        /// LobbyUiBootstrap 会 <see cref="UIFrameService.ShowLobbyMenu"/>。
+        /// </summary>
+        public static void TryReturnToLobby()
+        {
+            Time.timeScale = 1f;
+            UIFrameService.UnlockCursor();
+            UIFrameService.CloseAllWindowsImmediate();
+            if (UIFrameService.Frame != null)
+                UIFrameService.Frame.HideAllPanels(animate: false);
+            UIFrameService.UnlockCursor();
+
+            var nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening)
+                nm.Shutdown();
+
+            SceneManager.LoadScene(LobbySceneName);
         }
 
         /// <summary>Client uses transport address/port; do not call LoadScene — NGO syncs the active scene from the host.</summary>

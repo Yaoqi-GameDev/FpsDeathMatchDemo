@@ -24,7 +24,8 @@ public static class UiFrameworkFeatureEnricher
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
             if (AssetDatabase.LoadAssetAtPath<GameObject>(ScreensDir + "/SettingsWindowController.prefab") != null
-                && AssetDatabase.LoadAssetAtPath<GameObject>(ScreensDir + "/HurtOverlayPanelController.prefab") != null)
+                && AssetDatabase.LoadAssetAtPath<GameObject>(ScreensDir + "/HurtOverlayPanelController.prefab") != null
+                && AssetDatabase.LoadAssetAtPath<GameObject>(ScreensDir + "/InMatchPauseMenuWindowController.prefab") != null)
                 return;
             Enrich(showDialog: false);
         };
@@ -42,6 +43,7 @@ public static class UiFrameworkFeatureEnricher
             Directory.CreateDirectory(ScreensDir);
 
         EnsureSettingsWindowPrefab();
+        EnsurePauseMenuWindowPrefab();
         EnsureHurtOverlayPanelPrefab();
         StripLobbySettingsPlaceholder();
         StripEndGameSelfDimAndWireFade();
@@ -51,16 +53,14 @@ public static class UiFrameworkFeatureEnricher
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log("[UiFrameworkFeatureEnricher] Screens enriched (Fade / Settings / Hurt Prioritary).");
+        Debug.Log("[UiFrameworkFeatureEnricher] Screens enriched (Fade / Settings / Pause / Hurt Prioritary).");
         if (showDialog)
         {
             EditorUtility.DisplayDialog(
                 "UI Framework Features",
                 "Done:\n" +
-                "• Removed lobby SettingsPanel placeholder\n" +
-                "• EndGame uses framework DarkenBG (no self dim Image)\n" +
-                "• FadeAni on Lobby / Settings / EndGame\n" +
-                "• SettingsWindowController + HurtOverlayPanelController (Prioritary)\n\n" +
+                "• Settings / Pause (ESC) / EndGame popups + FadeAni\n" +
+                "• HurtOverlay Prioritary panel\n\n" +
                 "Restart Play so UIFrame re-registers screens.",
                 "OK");
         }
@@ -110,6 +110,62 @@ public static class UiFrameworkFeatureEnricher
         so.ApplyModifiedPropertiesWithoutUndo();
         PrefabUtility.SaveAsPrefabAsset(rootGo, path);
         Object.DestroyImmediate(rootGo);
+    }
+
+    private static void EnsurePauseMenuWindowPrefab()
+    {
+        string path = ScreensDir + "/InMatchPauseMenuWindowController.prefab";
+        var rootGo = new GameObject(InMatchPauseMenuWindowController.ScreenId, typeof(RectTransform));
+        var rootRt = rootGo.GetComponent<RectTransform>();
+        StretchFull(rootRt);
+
+        var window = rootGo.AddComponent<InMatchPauseMenuWindowController>();
+        AttachFadePair(rootGo);
+
+        var boxGo = new GameObject("Box", typeof(RectTransform));
+        var boxRt = boxGo.GetComponent<RectTransform>();
+        boxRt.SetParent(rootRt, false);
+        boxRt.anchorMin = boxRt.anchorMax = new Vector2(0.5f, 0.5f);
+        boxRt.sizeDelta = new Vector2(360f, 280f);
+        boxGo.AddComponent<Image>().color = new Color(0.12f, 0.13f, 0.17f, 1f);
+
+        var title = CreateTmp(boxRt, "Title", "Paused", 28f, TextAlignmentOptions.Center);
+        var titleRt = title.rectTransform;
+        titleRt.anchorMin = new Vector2(0.08f, 0.72f);
+        titleRt.anchorMax = new Vector2(0.92f, 0.92f);
+        titleRt.offsetMin = Vector2.zero;
+        titleRt.offsetMax = Vector2.zero;
+
+        var resume = CreateButton(boxRt, "BtnResume", "Resume");
+        PlaceButton(resume, 0.52f);
+        var settings = CreateButton(boxRt, "BtnSettings", "Settings");
+        PlaceButton(settings, 0.32f);
+        var lobby = CreateButton(boxRt, "BtnReturnLobby", "Return to Lobby");
+        PlaceButton(lobby, 0.12f);
+
+        var so = new SerializedObject(window);
+        so.FindProperty("_resumeButton").objectReferenceValue = resume;
+        so.FindProperty("_settingsButton").objectReferenceValue = settings;
+        so.FindProperty("_returnToLobbyButton").objectReferenceValue = lobby;
+        var props = so.FindProperty("properties");
+        if (props != null)
+        {
+            props.FindPropertyRelative("hideOnForegroundLost").boolValue = false;
+            props.FindPropertyRelative("windowQueuePriority").enumValueIndex = (int)WindowPriority.ForceForeground;
+            props.FindPropertyRelative("isPopup").boolValue = true;
+        }
+
+        so.ApplyModifiedPropertiesWithoutUndo();
+        PrefabUtility.SaveAsPrefabAsset(rootGo, path);
+        Object.DestroyImmediate(rootGo);
+    }
+
+    private static void PlaceButton(Button btn, float anchorY)
+    {
+        var rt = btn.GetComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, anchorY);
+        rt.sizeDelta = new Vector2(240f, 44f);
+        rt.anchoredPosition = Vector2.zero;
     }
 
     private static void EnsureHurtOverlayPanelPrefab()

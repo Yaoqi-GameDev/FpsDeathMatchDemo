@@ -2756,8 +2756,8 @@ GameObject:
   - component: {fileID: 6794435940323489161}
   - component: {fileID: 3661955145626062320}
   - component: {fileID: 3513599619040055548}
-  - component: {fileID: 8572389325657179056}
-  - component: {fileID: 9133576814380238828}
+  - component: {fileID: 5156950973529318505}
+  - component: {fileID: 5889423265528391444}
   m_Layer: 0
   m_Name: LobbyMenuWindowController
   m_TagString: Untagged
@@ -2797,8 +2797,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f60718293a4b5c6d7e8f90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animIn: {fileID: 8572389325657179056}
-  animOut: {fileID: 9133576814380238828}
+  animIn: {fileID: 5156950973529318505}
+  animOut: {fileID: 5889423265528391444}
   properties:
     hideOnForegroundLost: 1
     windowQueuePriority: 0
@@ -2822,7 +2822,7 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &8572389325657179056
+--- !u!114 &5156950973529318505
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2836,7 +2836,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   fadeDuration: 0.2
   fadeOut: 0
---- !u!114 &9133576814380238828
+--- !u!114 &5889423265528391444
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
