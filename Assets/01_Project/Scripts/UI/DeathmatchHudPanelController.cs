@@ -3,6 +3,7 @@ using FpsDemo.Combat;
 using FpsDemo.Match;
 using FpsDemo.Netcode;
 using TMPro;
+using UIFramework;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,14 +11,16 @@ using UnityEngine.UI;
 namespace FpsDemo.UI
 {
     /// <summary>
-    /// 死斗 HUD：顶栏剩余时间与击杀排行、右上击杀播报（最多 5 条）、左下玩家血量条。
-    /// 挂在 Canvas 下空物体上，在 Inspector 拖引用；击杀条使用 <b>unscaled</b> 时间，与 <c>timeScale=0</c> 结算兼容。
-    /// 联机时本地玩家在 <see cref="NetworkBehaviour.OnNetworkSpawn"/> 之后才标记为本地，需在 <see cref="Update"/> 中持续解析 <see cref="Health"/>。
-    /// 联机击杀播报由 <see cref="FpsDemo.Netcode.NetworkKillFeedBroadcaster"/> 发 <see cref="ClientRpc"/>，调用 <see cref="AppendKillFeedFromNetwork"/>；单机仍订阅 <see cref="CombatKillBus"/>。
+    /// Deathmatch HUD panel. Prefab / ScreenId: <c>DeathmatchHudPanelController</c>.
+    /// Core: timer / leaderboard / kill feed / health.
+    /// Same prefab also hosts gameplay widgets: <see cref="AmmoHub"/>, <see cref="FpsCrosshairHitFeedback"/>,
+    /// <see cref="FpsPlayerHurtOverlayFeedback"/>, <see cref="KillStreakHudPlaceholder"/>.
+    /// Network kill feed via <see cref="AppendKillFeedFromNetwork"/>.
     /// </summary>
-    [DisallowMultipleComponent]
-    public sealed class DeathmatchHudView : MonoBehaviour
+    public sealed class DeathmatchHudPanelController : PanelController
     {
+        public const string ScreenId = "DeathmatchHudPanelController";
+
         private struct FeedEntry
         {
             public string Text;
@@ -26,25 +29,18 @@ namespace FpsDemo.UI
         }
 
         [Header("数据")]
-        [Tooltip("空则使用 MatchManager.Instance")]
         [SerializeField] private MatchManager _matchManager;
-
-        [Tooltip("空则在 Start 时从 ActiveParticipants 找 IsLocalPlayer")]
         [SerializeField] private MatchParticipant _localPlayerParticipant;
-
-        [Tooltip("空则在本地参与者根上 GetComponent<Health>")]
         [SerializeField] private Health _playerHealth;
 
         [Header("顶栏：剩余时间")]
         [SerializeField] private TMP_Text _matchTimerText;
 
-        [Header("顶栏：排行（多行 TMP）")]
+        [Header("顶栏：排行")]
         [SerializeField] private TMP_Text _leaderboardText;
 
-        [Header("右上：击杀播报（元素 0 = 最新一条，向下变旧）")]
+        [Header("右上：击杀播报（0 = 最新）")]
         [SerializeField] private TMP_Text[] _killFeedLines;
-
-        [Header("右上：样式")]
         [SerializeField] private float _killFeedHoldSeconds = 4f;
         [SerializeField] private Color _killFeedNormalColor = Color.white;
         [SerializeField] private Color _killFeedSelfInvolvedColor = new Color(1f, 0.85f, 0.2f);
@@ -59,33 +55,38 @@ namespace FpsDemo.UI
         private static bool UseNetworkKillFeed =>
             NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
 
+        /// <summary>联机 ClientRpc 入口。</summary>
+        public static void AppendKillFeedFromNetwork(string killerDisplayName, string victimDisplayName)
+        {
+#pragma warning disable CS0618
+            var hud = Object.FindObjectOfType<DeathmatchHudPanelController>(includeInactive: true);
+#pragma warning restore CS0618
+            if (hud == null)
+                return;
+            hud.AppendKillFeedLine(killerDisplayName, victimDisplayName);
+        }
+
+        protected override void AddListeners()
+        {
+            CombatKillBus.KillCommitted += OnKillCommitted;
+        }
+
+        protected override void RemoveListeners()
+        {
+            CombatKillBus.KillCommitted -= OnKillCommitted;
+        }
+
         private void Start()
         {
             _resolvedMatch = _matchManager != null ? _matchManager : MatchManager.Instance;
             TryResolvePlayerHealth();
         }
 
-        private void OnEnable()
-        {
-            CombatKillBus.KillCommitted += OnKillCommitted;
-        }
-
-        private void OnDisable()
-        {
-            CombatKillBus.KillCommitted -= OnKillCommitted;
-        }
-
-        /// <summary>联机：<see cref="FpsDemo.Netcode.NetworkKillFeedBroadcaster"/> 的 ClientRpc 调用；与单机总线共用插入逻辑。</summary>
-        public static void AppendKillFeedFromNetwork(string killerDisplayName, string victimDisplayName)
-        {
-            var hud = Object.FindObjectOfType<DeathmatchHudView>();
-            if (hud == null)
-                return;
-            hud.AppendKillFeedLine(killerDisplayName, victimDisplayName);
-        }
-
         private void Update()
         {
+            if (!IsVisible)
+                return;
+
             float u = Time.unscaledTime;
             for (int i = _feed.Count - 1; i >= 0; i--)
             {
@@ -152,7 +153,6 @@ namespace FpsDemo.UI
             }
         }
 
-        /// <summary>联机：已生成玩家的击杀来自 <see cref="PlayerMatchStatsNet.NetworkKills"/>；其余（如仅场景人机）用 <see cref="MatchManager.GetKills"/>。</summary>
         private static List<(string name, int kills)> BuildLeaderboardRows(MatchManager mm)
         {
             var nm = NetworkManager.Singleton;
@@ -294,7 +294,7 @@ namespace FpsDemo.UI
             }
         }
 
-        private string ResolveDisplayName(GameObject go)
+        private static string ResolveDisplayName(GameObject go)
         {
             if (go == null)
                 return "?";

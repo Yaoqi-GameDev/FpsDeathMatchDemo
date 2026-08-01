@@ -1,4 +1,3 @@
-using System.Collections;
 using FpsDemo.Match;
 using TMPro;
 using UnityEngine;
@@ -7,7 +6,7 @@ namespace FpsDemo.UI
 {
     /// <summary>
     /// 连杀占位 HUD：订阅 <see cref="KillStreakTracker.StreakChanged"/>（通常由 <see cref="KillStreakTracker.Local"/> 解析）。
-    /// 挂在 <c>DeathmatchHUD</c> / Canvas 下即可。
+    /// Tracker 可晚于 UI 生成；在 <see cref="LateUpdate"/> 持续尝试绑定。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class KillStreakHudPlaceholder : MonoBehaviour
@@ -15,8 +14,8 @@ namespace FpsDemo.UI
         [Header("显示")]
         [SerializeField] private TMP_Text _streakText;
 
-        [Tooltip("例如 连杀 x{0}；{0} 为当前连杀数。")]
-        [SerializeField] private string _format = "连杀 x{0}";
+        [Tooltip("例如 Killx{0}；{0} 为当前连杀数。")]
+        [SerializeField] private string _format = "Killx{0}";
 
         [Header("数据")]
         [Tooltip("空则使用 KillStreakTracker.Local")]
@@ -29,14 +28,8 @@ namespace FpsDemo.UI
             TryBind();
         }
 
-        private void Start()
+        private void LateUpdate()
         {
-            StartCoroutine(DelayedBind());
-        }
-
-        private IEnumerator DelayedBind()
-        {
-            yield return null;
             if (!_listening)
                 TryBind();
         }
@@ -84,13 +77,15 @@ namespace FpsDemo.UI
             if (_streakText == null)
                 return;
 
+            // 勿对「脚本同物体」SetActive(false)，否则 LateUpdate 再也跑不起来、也收不到连杀事件。
             if (streak <= 0)
             {
-                _streakText.gameObject.SetActive(false);
+                _streakText.text = "";
+                _streakText.enabled = false;
                 return;
             }
 
-            _streakText.gameObject.SetActive(true);
+            _streakText.enabled = true;
             _streakText.text = string.Format(_format, streak);
         }
     }

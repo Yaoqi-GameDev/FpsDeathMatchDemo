@@ -43,7 +43,7 @@ namespace FpsDemo.Netcode
         [ClientRpc]
         private void BroadcastKillFeedClientRpc(string killerDisplayName, string victimDisplayName)
         {
-            DeathmatchHudView.AppendKillFeedFromNetwork(killerDisplayName, victimDisplayName);
+            DeathmatchHudPanelController.AppendKillFeedFromNetwork(killerDisplayName, victimDisplayName);
         }
 
         private static string ResolveDisplayName(GameObject go)

@@ -8,13 +8,13 @@ namespace FpsDemo.UI
 {
     /// <summary>
     /// 本地玩家受伤：订阅 <see cref="Health.Damaged"/>，全屏 <see cref="Image"/> 短暂泛红后淡出。
-    /// 仅绑定 <see cref="MatchParticipant.IsLocalPlayer"/> 的 <see cref="Health"/>；建议 Canvas Sort Order 低于死亡全屏灰幕。
+    /// <see cref="_playerHealth"/> 可空：联机玩家晚生成时在 <see cref="LateUpdate"/> 持续解析并订阅。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class FpsPlayerHurtOverlayFeedback : MonoBehaviour
     {
         [Header("数据")]
-        [Tooltip("空则在运行时从 ActiveParticipants 找 IsLocalPlayer 的 Health（OnEnable 与 Start 各尝试一次）。")]
+        [Tooltip("空则运行时从 ActiveParticipants 找 IsLocalPlayer 的 Health。")]
         [SerializeField] private Health _playerHealth;
 
         [Header("UI")]
@@ -41,9 +41,10 @@ namespace FpsDemo.UI
             TrySubscribeToDamage();
         }
 
-        private void Start()
+        private void LateUpdate()
         {
-            TrySubscribeToDamage();
+            if (!_listening)
+                TrySubscribeToDamage();
         }
 
         private void OnDisable()
@@ -95,10 +96,6 @@ namespace FpsDemo.UI
                 if (_playerHealth != null)
                     return;
             }
-
-            var tagged = GameObject.FindGameObjectWithTag("Player");
-            if (tagged != null)
-                _playerHealth = tagged.GetComponent<Health>();
         }
 
         private static bool IsLocalPlayerHealth(Health health)
@@ -107,7 +104,7 @@ namespace FpsDemo.UI
                 return false;
             if (health.GetComponent<MatchParticipant>() is { } mp)
                 return mp.IsLocalPlayer;
-            return health.CompareTag("Player");
+            return false;
         }
 
         private void OnPlayerDamaged(float _, GameObject __)

@@ -1,15 +1,18 @@
 using System.Collections;
 using FpsDemo.Combat;
+using FpsDemo.Match;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace FpsDemo.UI
 {
     /// <summary>
-    /// 订阅 <see cref="FpsHitscanWeapon.ShotHitDamageable"/>，命中可受伤目标时短暂改变准星 <see cref="Image"/> 颜色。联机时事件来自服务端判伤回传。
+    /// 订阅 <see cref="FpsHitscanWeapon.ShotHitDamageable"/>，命中可受伤目标时短暂改变准星 <see cref="Image"/> 颜色。
+    /// <see cref="_weapon"/> 可空：联机玩家晚生成时在 <see cref="LateUpdate"/> 持续解析本地武器。
     /// </summary>
     public sealed class FpsCrosshairHitFeedback : MonoBehaviour
     {
+        [Tooltip("可空：空则运行时解析本地参战者的 FpsHitscanWeapon")]
         [SerializeField] private FpsHitscanWeapon _weapon;
         [SerializeField] private Image _crosshairImage;
 
@@ -18,6 +21,7 @@ namespace FpsDemo.UI
         [SerializeField] private float _flashDurationSeconds = 0.1f;
 
         private Coroutine _flashRoutine;
+        private bool _listening;
 
         private void Awake()
         {
@@ -27,20 +31,20 @@ namespace FpsDemo.UI
 
         private void OnEnable()
         {
-            if (_weapon == null)
-                return;
-
-            _weapon.ShotHitDamageable += OnShotHitDamageable;
+            TrySubscribe();
             if (_crosshairImage != null)
                 _crosshairImage.color = _normalColor;
         }
 
+        private void LateUpdate()
+        {
+            if (!_listening)
+                TrySubscribe();
+        }
+
         private void OnDisable()
         {
-            if (_weapon == null)
-                return;
-
-            _weapon.ShotHitDamageable -= OnShotHitDamageable;
+            Unsubscribe();
             if (_flashRoutine != null)
             {
                 StopCoroutine(_flashRoutine);
@@ -49,6 +53,46 @@ namespace FpsDemo.UI
 
             if (_crosshairImage != null)
                 _crosshairImage.color = _normalColor;
+        }
+
+        private void TrySubscribe()
+        {
+            if (_listening)
+                return;
+
+            TryResolveWeapon();
+            if (_weapon == null)
+                return;
+
+            _weapon.ShotHitDamageable += OnShotHitDamageable;
+            _listening = true;
+        }
+
+        private void Unsubscribe()
+        {
+            if (!_listening || _weapon == null)
+            {
+                _listening = false;
+                return;
+            }
+
+            _weapon.ShotHitDamageable -= OnShotHitDamageable;
+            _listening = false;
+        }
+
+        private void TryResolveWeapon()
+        {
+            if (_weapon != null)
+                return;
+
+            foreach (var p in MatchParticipant.ActiveParticipants)
+            {
+                if (p != null && p.IsLocalPlayer)
+                {
+                    _weapon = p.GetComponent<FpsHitscanWeapon>();
+                    break;
+                }
+            }
         }
 
         private void OnShotHitDamageable(bool hitDamageable)

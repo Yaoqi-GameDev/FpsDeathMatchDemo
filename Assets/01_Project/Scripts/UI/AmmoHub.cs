@@ -7,7 +7,7 @@ namespace FpsDemo.UI
 {
     /// <summary>
     /// 仅负责把 <see cref="FpsHitscanWeapon"/> 的弹药数据写到 UI Text（不修改武器数据）。
-    /// <see cref="_weapon"/> 可空：未拖引用时会在运行中从 <see cref="MatchParticipant.ActiveParticipants"/> 里找 <see cref="MatchParticipant.IsLocalPlayer"/> 并在其根物体上取 <see cref="FpsHitscanWeapon"/>（与 <see cref="DeathmatchHudView"/> 解析血量一致，适配联机生成后才有本地玩家）。
+    /// <see cref="_weapon"/> 可空：未拖引用时会在运行中从 <see cref="MatchParticipant.ActiveParticipants"/> 里找 <see cref="MatchParticipant.IsLocalPlayer"/> 并在其根物体上取 <see cref="FpsHitscanWeapon"/>（与 <see cref="DeathmatchHudPanelController"/> 解析血量一致，适配联机生成后才有本地玩家）。
     /// 准星等静态 UI 可挂在同 Canvas 下，不必挂在本脚本上。
     /// </summary>
     public sealed class AmmoHub : MonoBehaviour

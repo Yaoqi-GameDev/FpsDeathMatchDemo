@@ -13,6 +13,7 @@ public static class UiSettingsScreenList
     {
         ScreensDir + "/LobbyMenuWindowController.prefab",
         ScreensDir + "/EndGameWindowController.prefab",
+        ScreensDir + "/DeathmatchHudPanelController.prefab",
     };
 
     public static void WireAllPresentScreens()

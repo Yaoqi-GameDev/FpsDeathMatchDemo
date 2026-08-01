@@ -159,16 +159,20 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 ### UI 框架（UIFrame）
 
 - 框架代码：`Assets/01_Project/Scripts/UIFramework/`
-- 业务界面命名：在角色名后加 **`Controller`**（如窗口 `LobbyMenuWindowController : WindowController`；面板以后用 `XxxPanelController : PanelController`）。
+- 业务界面命名：在角色名后加 **`Controller`**（如窗口 `LobbyMenuWindowController : WindowController`；面板 `DeathmatchHudPanelController : PanelController`）。
 - 全局入口：`UIFrameService.Ensure(UISettings)` → 创建一次 **UIFrame**，根挂 **`DontDestroyThisRoot`** 跨场景保留。
 - Lobby 启动：`LobbyUiBootstrap` 打开 ScreenId **`LobbyMenuWindowController`**。
+- 局内 HUD：`MatchManager.Start` → `ShowPanel(**DeathmatchHudPanelController**)`（时间 / 排行 / 击杀 / 血量 + 弹药 / 准星 / 受伤红闪 / 连杀，做法 A 同一 Panel）；结算时 `HidePanel`。
 - 结算：`MatchManager` 结束时 `OpenWindow(**EndGameWindowController**)`（弹窗、无动画）；Again → `RestartMatch()`。
 - 配置：`Assets/01_Project/Data/UISettings/UISettings.asset`  
   - **Template** = `UIFrame` 预制体  
   - **Screens** = 各界面预制体（须带业务 `*Controller`，**不要**把 UIFrame 放进 Screens）
 - 生成界面预制体（缺失时编辑器会自动生成）：  
   - **`FpsDemo → UI → Build LobbyMenuWindowController Prefab And Wire UISettings`**  
-  - **`FpsDemo → UI → Build EndGameWindowController Prefab And Wire UISettings`**
+  - **`FpsDemo → UI → Build EndGameWindowController Prefab And Wire UISettings`**  
+  - **`FpsDemo → UI → Build DeathmatchHudPanelController Prefab And Wire UISettings`**  
+  - **`FpsDemo → UI → Ensure Gameplay Widgets On DeathmatchHudPanelController Prefab`**（只补弹药/准星/受伤/连杀，不重建你微调过的布局）
+- 场景 **`GamePlayCanvas`** 下旧 Ammo / Crosshair / HurtOverlay / DeathmatchHUD 已关掉；RTT（`ClientLatencyHud`）仍可后迁。
 
 ---
 
@@ -189,6 +193,8 @@ Unity 练习项目：目标为**简单多人死斗 FPS**；当前按阶段推进
 
 | 日期 | 说明 |
 |------|------|
+| 2026-08-01 | **HUD 做法 A**：弹药/准星/受伤/连杀并进 `DeathmatchHudPanelController`；修联机晚绑定；场景旧 GamePlayCanvas 对应节点关掉 |
+| 2026-08-01 | **局内 HUD Panel**：`DeathmatchHudPanelController`；`MatchManager` `ShowPanel`；联机击杀条改调新 API；删除旧 `DeathmatchHudView` |
 | 2026-08-01 | **结算**：去掉 `timeScale=0`；结束时仅禁本地玩法输入 + 解锁光标；`EndGameWindowController` 经 UIFrame 打开 |
 | 2026-08-01 | **结算 UI**：`EndGameWindowController` + `MatchManager` 经 UIFrame 打开；移除场景占位 Panel 引用 |
 | 2026-08-01 | **UI 命名**：`LobbyMenuWindowController`（原 Window 名 + Controller）；删除旧 `LobbyMenuView` / `LobbyMenuUiBuilder` |
@@ -348,17 +354,14 @@ CombatKillBus.KillCommitted(KillReport)
 
 **场景挂载**：在 **`DeathMatch`** 中空物体挂 **`MatchManager`**；联机时同物体再加 **`NetworkObject`** + **`NetMatchManager`**（已写入 **`DeathMatch.unity`**）。**`Player` 与每个人机根**各挂 **`MatchParticipant`**（填显示名；本地玩家勾选 **`Is Local Player`**）。可选：拖 **占位 Panel + TMP_Text + Button** 到 **`MatchManager`** 的结算引用，**Restart** 调用 **`RestartMatch()`**（重载当前场景并恢复 **`timeScale`**）。
 
-### 死斗 HUD（`DeathmatchHudView`）
+### 死斗 HUD（`DeathmatchHudPanelController`）
 
-搭建步骤：
+走 **UIFrame Panel**（做法 A：主 HUD + 弹药 / 准星 / 受伤 / 连杀同一预制体）：
 
-1. 在 **`GamePlayCanvas`**（或主 Canvas）下建空物体 **`DeathmatchHUD`**，挂 **`DeathmatchHudView`**。  
-2. **顶栏时间**：建 **TMP_Text**，锚点 **顶部居中**，拖入 **`Match Timer Text`**。  
-3. **顶栏排行**：建 **TMP_Text**（多行、左对齐），锚点 **顶部偏左或全宽**，拖入 **`Leaderboard Text`**。  
-4. **右上击杀条**：建 **5 个 TMP_Text**（竖排，上=new），按 **从上到下的顺序** 填入 **`Kill Feed Lines`** 数组（元素 0 = 最上一条）。  
-5. **左下血条**：建 **Slider**（0～1）+ 可选血量数字 **TMP_Text**；**`Player` 需挂 `Health`** 才会更新（否则血条隐藏）。  
-6. **`Kill Feed Hold Seconds`**：每条播报保留的**真实秒数**（`unscaled`）。**自己参与**的击杀用 **`Kill Feed Self Involved Color`** 高亮。  
-7. **`Match Manager` / `Local Player Participant` / `Player Health`** 可留空，脚本会尝试 **`Instance`** 与 **`IsLocalPlayer`** 自动解析。
+1. 菜单 **`Build DeathmatchHudPanelController…`**；若你已微调过布局，用 **`Ensure Gameplay Widgets…`** 只补缺件。  
+2. **`MatchManager.Start`** → `ShowPanel`；结算 → `HidePanel`。  
+3. 联机击杀条：`NetworkKillFeedBroadcaster` → `AppendKillFeedFromNetwork`。  
+4. 准星 / 受伤 / 连杀脚本会在运行时持续解析本地玩家（适配 NGO 晚生成）。
 
 ---
 
@@ -368,7 +371,7 @@ CombatKillBus.KillCommitted(KillReport)
 - `Assets/01_Project/Scripts/Data/`：**`HitscanWeaponConfig`**（ScriptableObject 模板，与 `Assets/01_Project/Data/Weapons/` 下 `.asset` 对应）
 - `Assets/01_Project/Scripts/Combat/`：`IDamageable`（**`ApplyDamage` 两则重载**）、**`KillReport`**、**`CombatKillBus`**、`Health`、`ShotHitInfo`、**`HitscanShotResolver`**、**`FpsHitscanWeapon`**、**`FpsTestDummyEnemy`**（测试：需同挂 **`Health`**，游荡 + 随机复活）
 - `Assets/01_Project/Data/Weapons/`：**`Hitscan_Rifle_Standard`**、**`Hitscan_Pistol_Standard`** 等（**`Create → FpsDemo → Data → Hitscan Weapon Config`** 可再建）
-- `Assets/01_Project/Scripts/UI/`：`AmmoHub`、`FpsCrosshairHitFeedback`、**`DeathmatchHudView`**（死斗：时间、排行、击杀条、血量）、**`KillStreakHudPlaceholder`**
+- `Assets/01_Project/Scripts/UI/`：**`DeathmatchHudPanelController`**（主 HUD Panel）+ 同预制体上的 `AmmoHub` / `FpsCrosshairHitFeedback` / `FpsPlayerHurtOverlayFeedback` / `KillStreakHudPlaceholder`
 - `Assets/01_Project/Scripts/Audio/`：`AudioManager`、`FpsWeaponAudioObserver`、`FpsHitscanSurfaceAudioFeedback`、**`KillStreakAudioFeedback`**
 - `Assets/01_Project/Scripts/Core/`：`DontDestroyThisRoot`（通用：仅挂在场景根，用于 DDOL）
 - `Assets/01_Project/Scripts/Match/`：**`MatchParticipant`**、**`MatchManager`**、**`MatchResult`** / **`MatchEndReason`**、**`KillStreakTracker`**
@@ -407,7 +410,7 @@ CombatKillBus.KillCommitted(KillReport)
 | `MatchParticipant` | 参战者身份与显示名；进 **`MatchManager`** 记分表 |
 | `MatchManager` | 订阅 **`CombatKillBus`**；单机本地倒计时，联机读 **`NetMatchManager`**；目标击杀、**`MatchEnded`**、占位结算、**`RestartMatch`** |
 | `NetMatchManager` | 联机：服务器写 **`NetworkVariable`**（剩余秒、已结束）；与 **`MatchManager`** 同物体，需 **`NetworkObject`** |
-| `DeathmatchHudView` | 读 **`MatchManager`**、**`CombatKillBus`**、本地 **`Health`**；顶栏/右上/左下 HUD |
+| `DeathmatchHudPanelController` | UIFrame Panel：读 **`MatchManager`**、**`CombatKillBus`**、本地 **`Health`**；顶栏/右上/左下 HUD |
 | `KillStreakTracker` | **本地 Player 根**：**`CombatKillBus`** + 时间窗；**`StreakChanged(int)`**；死亡 / **`MatchEnded`** / 超时清零 |
 | `KillStreakAudioFeedback` | 同 **`Player`**：订阅 **`KillStreakTracker.StreakChanged`**，按档位 **`AudioManager.PlayOneShot2D`**（1～5） |
 | `KillStreakHudPlaceholder` | **Canvas / `DeathmatchHUD`**：拖 **`TMP_Text`**，订阅 **`KillStreakTracker.Local`** 的 **`StreakChanged`** |

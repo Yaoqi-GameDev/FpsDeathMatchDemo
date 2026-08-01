@@ -1489,7 +1489,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &207767428
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2310,7 +2310,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 301130109}
-  - component: {fileID: 301130110}
   - component: {fileID: 450001204}
   m_Layer: 0
   m_Name: DeathmatchHUD
@@ -2318,7 +2317,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &301130109
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2342,34 +2341,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &301130110
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 301130108}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b6c5489e1b9a56489d7e22cda9bd5b2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _matchManager: {fileID: 1421627364}
-  _localPlayerParticipant: {fileID: 0}
-  _playerHealth: {fileID: 0}
-  _matchTimerText: {fileID: 1976275337}
-  _leaderboardText: {fileID: 1345387087}
-  _killFeedLines:
-  - {fileID: 161231411}
-  - {fileID: 677488630}
-  - {fileID: 2010304669}
-  - {fileID: 309680849}
-  - {fileID: 1132217366}
-  _killFeedHoldSeconds: 4
-  _killFeedNormalColor: {r: 1, g: 1, b: 1, a: 1}
-  _killFeedSelfInvolvedColor: {r: 1, g: 0.85, b: 0.2, a: 1}
-  _healthSlider: {fileID: 1670433362}
-  _healthNumber: {fileID: 1226317467}
 --- !u!1 &304594232 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 459322566853779362, guid: 12786b453b3a7cc4a815f43857ab7460, type: 3}
@@ -3373,7 +3344,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &450001201
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3713,7 +3684,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &489566397
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4031,7 +4002,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &523507754
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4124,7 +4095,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &540937346
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5856,7 +5827,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &830978792
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11051,7 +11022,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1581262215
 RectTransform:
   m_ObjectHideFlags: 0
