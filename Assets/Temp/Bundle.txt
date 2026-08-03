@@ -1,0 +1,10 @@
+﻿assets/01_project/assetbundleassets/ab_visiblecube.prefab.ab
+	Assets/01_Project/AssetBundleAssets/AB_VisibleCube.prefab
+assets/01_project/assetbundleassets/vfx/vfx_blood_01.prefab.ab
+	Assets/01_Project/AssetBundleAssets/VFX/VFX_Blood_01.prefab
+assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/04_model/impactplane.fbx.ab
+	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/04_Model/ImpactPlane.fbx
+assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/liquid/blood.mat.ab
+	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/01_Material/Liquid/BLOOD.mat
+assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/03_texture/blood.png.ab
+	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/03_Texture/Blood.png

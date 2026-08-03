@@ -1,0 +1,22 @@
+ManifestFileVersion: 0
+CRC: 3155239454
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: assets/01_project/assetbundleassets/ab_visiblecube.prefab.ab
+      Dependencies: {}
+    Info_1:
+      Name: assets/01_project/assetbundleassets/vfx/vfx_blood_01.prefab.ab
+      Dependencies:
+        Dependency_0: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/04_model/impactplane.fbx.ab
+        Dependency_1: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/liquid/blood.mat.ab
+    Info_2:
+      Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/04_model/impactplane.fbx.ab
+      Dependencies: {}
+    Info_3:
+      Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/liquid/blood.mat.ab
+      Dependencies:
+        Dependency_0: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/03_texture/blood.png.ab
+    Info_4:
+      Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/03_texture/blood.png.ab
+      Dependencies: {}

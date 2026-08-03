@@ -1,0 +1,20 @@
+ManifestFileVersion: 0
+CRC: 988597832
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 436f5de5abed8c231fe81d97f2c3d7f2
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 2612ac43db082a73502ee80f2eceb73f
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: 436f5de5abed8c231fe81d97f2c3d7f2
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/03_Texture/Blood.png
+Dependencies: []
