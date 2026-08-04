@@ -1,5 +1,5 @@
 ManifestFileVersion: 0
-CRC: 3155239454
+CRC: 2076577991
 AssetBundleManifest:
   AssetBundleInfos:
     Info_0:
@@ -11,12 +11,40 @@ AssetBundleManifest:
         Dependency_0: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/04_model/impactplane.fbx.ab
         Dependency_1: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/liquid/blood.mat.ab
     Info_2:
+      Name: assets/01_project/assetbundleassets/vfx/vfx_classic_03.prefab.ab
+      Dependencies:
+        Dependency_0: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/flare/impact
+          10.mat.ab
+        Dependency_1: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/flare/impact
+          7.mat.ab
+        Dependency_2: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/flare/impactalpha.mat.ab
+    Info_3:
       Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/04_model/impactplane.fbx.ab
       Dependencies: {}
-    Info_3:
+    Info_4:
       Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/liquid/blood.mat.ab
       Dependencies:
         Dependency_0: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/03_texture/blood.png.ab
-    Info_4:
+    Info_5:
+      Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/flare/impact
+        10.mat.ab
+      Dependencies:
+        Dependency_0: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/03_texture/zbam3.png.ab
+    Info_6:
+      Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/flare/impact
+        7.mat.ab
+      Dependencies:
+        Dependency_0: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/03_texture/zbam2.png.ab
+    Info_7:
+      Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/flare/impactalpha.mat.ab
+      Dependencies:
+        Dependency_0: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/03_texture/zbam2.png.ab
+    Info_8:
       Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/03_texture/blood.png.ab
+      Dependencies: {}
+    Info_9:
+      Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/03_texture/zbam3.png.ab
+      Dependencies: {}
+    Info_10:
+      Name: assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/03_texture/zbam2.png.ab
       Dependencies: {}

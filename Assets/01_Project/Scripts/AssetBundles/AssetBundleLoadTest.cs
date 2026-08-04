@@ -1,27 +1,34 @@
-using AssetBundleFramework;
+﻿using AssetBundleFramework;
 using UnityEngine;
 
 namespace FpsDemo.AssetBundles
 {
     /// <summary>
-    /// Temporary learning probe. F8 loads a visible cube through an actual AssetBundle.
+    /// Temporary learning probe. F6/F7 load the two impact VFX prefabs through AssetBundles.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class AssetBundleLoadTest : MonoBehaviour
     {
-        private const string TestPrefabPath =
-            "Assets/01_Project/AssetBundleAssets/AB_VisibleCube.prefab";
+        private const string DamageableImpactPath =
+            "Assets/01_Project/AssetBundleAssets/VFX/VFX_Blood_01.prefab";
 
-        [SerializeField] private KeyCode _loadKey = KeyCode.F8;
+        private const string WorldImpactPath =
+            "Assets/01_Project/AssetBundleAssets/VFX/VFX_Classic_03.prefab";
+
+        [SerializeField] private KeyCode _damageableImpactKey = KeyCode.F6;
+        [SerializeField] private KeyCode _worldImpactKey = KeyCode.F7;
         [SerializeField] private float _lifetimeSeconds = 2f;
 
         private void Update()
         {
-            if (Input.GetKeyDown(_loadKey))
-                LoadAndSpawn();
+            if (Input.GetKeyDown(_damageableImpactKey))
+                LoadAndSpawn(DamageableImpactPath);
+
+            if (Input.GetKeyDown(_worldImpactKey))
+                LoadAndSpawn(WorldImpactPath);
         }
 
-        private void LoadAndSpawn()
+        private void LoadAndSpawn(string assetPath)
         {
             if (!AssetBundleRuntime.IsInitialized)
             {
@@ -29,10 +36,13 @@ namespace FpsDemo.AssetBundles
                 return;
             }
 
-            ResourceManager.instance.LoadWithCallback(TestPrefabPath, async: true, OnLoaded);
+            ResourceManager.instance.LoadWithCallback(
+                assetPath,
+                async: true,
+                resource => OnLoaded(resource, assetPath));
         }
 
-        private void OnLoaded(IResource resource)
+        private void OnLoaded(IResource resource, string assetPath)
         {
             if (resource == null)
             {
@@ -49,14 +59,14 @@ namespace FpsDemo.AssetBundles
             GameObject instance = resource.Instantiate(position, rotation, autoUnload: true);
             if (instance == null)
             {
-                Debug.LogError("[AssetBundles] Loaded asset was not a GameObject: " + TestPrefabPath, this);
+                Debug.LogError("[AssetBundles] Loaded asset was not a GameObject: " + assetPath, this);
                 ResourceManager.instance.Unload(resource);
                 return;
             }
 
             PlayParticleSystems(instance);
             Destroy(instance, Mathf.Max(0.1f, _lifetimeSeconds));
-            Debug.Log("[AssetBundles] Spawned AB test prefab: " + TestPrefabPath, this);
+            Debug.Log("[AssetBundles] Spawned AB test prefab: " + assetPath, this);
         }
 
         private static Camera FindWorldCamera()

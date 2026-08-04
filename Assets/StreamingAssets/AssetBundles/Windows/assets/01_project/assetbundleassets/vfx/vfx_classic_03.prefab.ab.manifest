@@ -1,0 +1,33 @@
+ManifestFileVersion: 0
+CRC: 1118307847
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 2ef130be533f7214329d68aa6c32886d
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: ce1fc08df2f758d6d856448290aaf38c
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: 2ef130be533f7214329d68aa6c32886d
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 198
+  Script: {instanceID: 0}
+- Class: 199
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/01_Project/AssetBundleAssets/VFX/VFX_Classic_03.prefab
+Dependencies:
+- D:/GameDev_Toolbox/98_Sandbox/UnityLearnigProject/AssetBundle/Windows/assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/flare/impact
+  10.mat.ab
+- D:/GameDev_Toolbox/98_Sandbox/UnityLearnigProject/AssetBundle/Windows/assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/flare/impact
+  7.mat.ab
+- D:/GameDev_Toolbox/98_Sandbox/UnityLearnigProject/AssetBundle/Windows/assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/flare/impactalpha.mat.ab

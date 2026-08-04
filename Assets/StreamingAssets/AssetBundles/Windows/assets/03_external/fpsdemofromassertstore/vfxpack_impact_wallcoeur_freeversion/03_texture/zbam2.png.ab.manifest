@@ -1,0 +1,20 @@
+ManifestFileVersion: 0
+CRC: 2497162427
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 93a9400fb5f9c46a13c4b74046d0504a
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 2612ac43db082a73502ee80f2eceb73f
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: 93a9400fb5f9c46a13c4b74046d0504a
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/03_Texture/Zbam2.png
+Dependencies: []
