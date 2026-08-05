@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.IO;
 using AssetBundleFramework;
 using UnityEngine;
@@ -29,6 +30,12 @@ namespace FpsDemo.AssetBundles
             }
 
             Instance = this;
+            StartCoroutine(Bootstrap());
+        }
+
+        private IEnumerator Bootstrap()
+        {
+            yield return AssetBundleUpdateManager.CheckRemoteVersion();
             Initialize();
         }
 
@@ -55,7 +62,7 @@ namespace FpsDemo.AssetBundles
 
         private void Initialize()
         {
-            _bundleRoot = Path.Combine(Application.streamingAssetsPath, "AssetBundles", PlatformFolderName);
+            _bundleRoot = AssetBundlePathResolver.ResolveBundleRoot(PlatformFolderName);
 
             if (!Directory.Exists(_bundleRoot))
             {
