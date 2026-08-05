@@ -1,4 +1,6 @@
+using System.Collections;
 using FpsDemo.Ai;
+using FpsDemo.AssetBundles;
 using UnityEngine;
 using AssetBundleFramework;
 
@@ -40,6 +42,14 @@ namespace FpsDemo.Combat
                 
 
             //加载ab包资源
+            StartCoroutine(LoadResourcesWhenRuntimeReady());
+        }
+
+        private IEnumerator LoadResourcesWhenRuntimeReady()
+        {
+            while (!AssetBundleRuntime.IsInitialized)
+                yield return null;
+
             ResourceManager.instance.LoadWithCallback(
                 DamageableImpactPath,
                 async: true,

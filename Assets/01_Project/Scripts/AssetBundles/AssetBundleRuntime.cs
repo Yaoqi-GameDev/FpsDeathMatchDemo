@@ -35,7 +35,7 @@ namespace FpsDemo.AssetBundles
 
         private IEnumerator Bootstrap()
         {
-            yield return AssetBundleUpdateManager.CheckRemoteVersion();
+            yield return AssetBundleUpdateManager.CheckAndUpdate();
             Initialize();
         }
 
