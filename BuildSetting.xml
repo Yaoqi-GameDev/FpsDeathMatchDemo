@@ -4,7 +4,7 @@
     AssetPath="Assets/01_Project/AssetBundleAssets"
     ResourceType="Direct"
     BundleType="File"
-    Suffix=".prefab" />
+    Suffix=".prefab|.asset" />
 
   <BuildItem
     AssetPath="Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/"

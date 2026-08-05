@@ -1,15 +1,15 @@
 ManifestFileVersion: 0
-CRC: 1723964000
+CRC: 1882259150
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: bbd997cb6b1e085937c52049c2bf4e86
+    Hash: d933e8a12d6f2756365eda4801a1192d
   TypeTreeHash:
     serializedVersion: 2
     Hash: 0f9fba26cbb38215f317d1fd6b1954a0
   IncrementalBuildHash:
     serializedVersion: 2
-    Hash: bbd997cb6b1e085937c52049c2bf4e86
+    Hash: d933e8a12d6f2756365eda4801a1192d
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -28,5 +28,5 @@ ClassTypes:
   Script: {instanceID: 0}
 SerializeReferenceClassIdentifiers: []
 Assets:
-- Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/04_Model/ImpactPlane.fbx
+- Assets/01_Project/AssetBundleAssets/Dependencies/ImpactPlane.fbx
 Dependencies: []

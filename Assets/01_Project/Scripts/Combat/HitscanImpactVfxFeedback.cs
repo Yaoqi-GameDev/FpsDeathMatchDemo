@@ -1,5 +1,6 @@
 using FpsDemo.Ai;
 using UnityEngine;
+using AssetBundleFramework;
 
 namespace FpsDemo.Combat
 {
@@ -14,9 +15,15 @@ namespace FpsDemo.Combat
         [SerializeField] private FpsHitscanWeapon _playerWeapon;
         [SerializeField] private FpsAiHitscanWeapon _aiWeapon;
 
-        [SerializeField] private GameObject _impactDamageablePrefab;
-        [SerializeField] private GameObject _impactWorldPrefab;
+        //替换为ab包资源 而不是直接拖引用
+        private IResource _impactDamageableResource;
+        private IResource _impactWorldResource;
         [SerializeField] private float _impactFxLifetimeSeconds = 2f;
+
+        //ab包资源路径
+        private const string DamageableImpactPath = "Assets/01_Project/AssetBundleAssets/VFX/VFX_Blood_01.prefab";
+        private const string WorldImpactPath = "Assets/01_Project/AssetBundleAssets/VFX/VFX_Classic_03.prefab";
+
 
         private void Awake()
         {
@@ -25,8 +32,23 @@ namespace FpsDemo.Combat
             if (_aiWeapon == null)
                 _aiWeapon = GetComponent<FpsAiHitscanWeapon>();
 
-            if (_playerWeapon == null && _aiWeapon == null)
+            if (_playerWeapon == null && _aiWeapon == null){
+                Debug.LogError("HitscanImpactVfxFeedback组件没有绑定FpsHitscanWeapon或FpsAiHitscanWeapon组件");
                 enabled = false;
+                return;
+            }
+                
+
+            //加载ab包资源
+            ResourceManager.instance.LoadWithCallback(
+                DamageableImpactPath,
+                async: true,
+                resource => _impactDamageableResource = resource);
+
+            ResourceManager.instance.LoadWithCallback(
+                WorldImpactPath,
+                async: true,
+                resource => _impactWorldResource = resource);
         }
 
         private void OnEnable()
@@ -50,15 +72,22 @@ namespace FpsDemo.Combat
             if (!info.HasWorldHit)
                 return;
 
-            GameObject prefab = info.HitDamageable ? _impactDamageablePrefab : _impactWorldPrefab;
-            if (prefab == null)
+            bool useBloodImpact = info.HitDamageable;
+            IResource resource = useBloodImpact
+                    ? _impactDamageableResource
+                    : _impactWorldResource;
+            if (resource == null)
                 return;
 
             Quaternion rot = info.Normal.sqrMagnitude > 1e-6f
                 ? Quaternion.LookRotation(info.Normal)
                 : Quaternion.identity;
 
-            GameObject go = Instantiate(prefab, info.Point, rot);
+            GameObject go = resource.Instantiate(info.Point, rot);
+            if (go == null){
+                Debug.LogError("HitscanImpactVfxFeedback组件加载ab包资源失败");
+                return;
+            }
             PlayParticleIfAny(go);
             Destroy(go, Mathf.Max(0.1f, _impactFxLifetimeSeconds));
         }
@@ -72,5 +101,6 @@ namespace FpsDemo.Combat
                     systems[i].Play(true);
             }
         }
+
     }
 }
