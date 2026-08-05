@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -16,22 +14,6 @@ namespace FpsDemo.AssetBundles
         internal const string RemoteVersionUrl = "http://localhost:8080/version.json";
 
         [Serializable]
-        private sealed class RemoteVersionInfo
-        {
-            public string version;
-            public string platform;
-            public List<RemoteFileInfo> files;
-        }
-
-        [Serializable]
-        private sealed class RemoteFileInfo
-        {
-            public string path;
-            public long size;
-            public string hash;
-        }
-
-        [Serializable]
         private sealed class LocalVersionInfo
         {
             public string version;
@@ -39,7 +21,7 @@ namespace FpsDemo.AssetBundles
 
         internal static IEnumerator CheckAndUpdate()
         {
-            RemoteVersionInfo remoteVersion = null;
+            AssetBundleVersionManifest remoteVersion = null;
             yield return DownloadRemoteVersion(info => remoteVersion = info);
 
             if (remoteVersion == null || remoteVersion.files == null || remoteVersion.files.Count == 0)
@@ -48,13 +30,19 @@ namespace FpsDemo.AssetBundles
             string persistentRoot = Path.Combine(Application.persistentDataPath, "AssetBundles");
             string currentVersionPath = Path.Combine(persistentRoot, "current.json");
             string localVersion = ReadLocalVersion(currentVersionPath);
-            string activeRoot = Path.Combine(persistentRoot, remoteVersion.version, AssetBundleRuntime.PlatformFolderName);
-
-            if (localVersion == remoteVersion.version && IsCompleteRoot(activeRoot))
+            string validationReason = null;
+            if (localVersion == remoteVersion.version &&
+                AssetBundleVersionValidator.TryValidate(
+                    Path.Combine(persistentRoot, remoteVersion.version),
+                    AssetBundleRuntime.PlatformFolderName,
+                    out validationReason))
             {
                 Debug.Log("[AssetBundles] Local version is already current: " + localVersion);
                 yield break;
             }
+
+            if (localVersion == remoteVersion.version && !string.IsNullOrEmpty(validationReason))
+                Debug.LogWarning("[AssetBundles] Local version needs repair: " + validationReason);
 
             string tempRoot = Path.Combine(
                 persistentRoot,
@@ -68,7 +56,7 @@ namespace FpsDemo.AssetBundles
             bool downloadSucceeded = true;
             for (int i = 0; i < remoteVersion.files.Count; i++)
             {
-                RemoteFileInfo file = remoteVersion.files[i];
+                AssetBundleFileRecord file = remoteVersion.files[i];
                 if (!IsSafeRelativePath(file.path))
                 {
                     Debug.LogWarning("[AssetBundles] Rejected unsafe update path: " + file.path);
@@ -107,6 +95,11 @@ namespace FpsDemo.AssetBundles
                 yield break;
             }
 
+            string temporaryVersionRoot = Path.Combine(persistentRoot, remoteVersion.version + ".downloading");
+            File.WriteAllText(
+                Path.Combine(temporaryVersionRoot, "version.json"),
+                JsonUtility.ToJson(remoteVersion, true));
+
             string finalVersionRoot = Path.Combine(persistentRoot, remoteVersion.version);
             if (Directory.Exists(finalVersionRoot))
                 Directory.Delete(finalVersionRoot, true);
@@ -125,7 +118,7 @@ namespace FpsDemo.AssetBundles
             Debug.Log("[AssetBundles] Activated downloaded version: " + remoteVersion.version);
         }
 
-        private static IEnumerator DownloadRemoteVersion(Action<RemoteVersionInfo> callback)
+        private static IEnumerator DownloadRemoteVersion(Action<AssetBundleVersionManifest> callback)
         {
             using (UnityWebRequest request = UnityWebRequest.Get(RemoteVersionUrl))
             {
@@ -141,10 +134,10 @@ namespace FpsDemo.AssetBundles
                     yield break;
                 }
 
-                RemoteVersionInfo versionInfo = null;
+                AssetBundleVersionManifest versionInfo = null;
                 try
                 {
-                    versionInfo = JsonUtility.FromJson<RemoteVersionInfo>(request.downloadHandler.text);
+                    versionInfo = JsonUtility.FromJson<AssetBundleVersionManifest>(request.downloadHandler.text);
                 }
                 catch (Exception exception)
                 {
@@ -168,7 +161,7 @@ namespace FpsDemo.AssetBundles
             }
         }
 
-        private static IEnumerator DownloadFile(string url, RemoteFileInfo file, Action<byte[]> callback)
+        private static IEnumerator DownloadFile(string url, AssetBundleFileRecord file, Action<byte[]> callback)
         {
             using (UnityWebRequest request = UnityWebRequest.Get(url))
             {
@@ -220,13 +213,6 @@ namespace FpsDemo.AssetBundles
             }
         }
 
-        private static bool IsCompleteRoot(string root)
-        {
-            return Directory.Exists(root) &&
-                   File.Exists(Path.Combine(root, "manifest.ab")) &&
-                   File.Exists(Path.Combine(root, AssetBundleRuntime.PlatformFolderName));
-        }
-
         private static bool IsSafeRelativePath(string value)
         {
             return !string.IsNullOrWhiteSpace(value) &&
@@ -237,7 +223,7 @@ namespace FpsDemo.AssetBundles
 
         private static string ComputeSha256(byte[] data)
         {
-            using (SHA256 sha256 = SHA256.Create())
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
             {
                 byte[] hash = sha256.ComputeHash(data);
                 return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();

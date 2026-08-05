@@ -12,8 +12,6 @@ namespace FpsDemo.AssetBundles
     {
         private const string BundleFolderName = "AssetBundles";
         private const string CurrentVersionFileName = "current.json";
-        private const string ManifestBundleFileName = "manifest.ab";
-
         [Serializable]
         private sealed class CurrentVersionInfo
         {
@@ -50,8 +48,10 @@ namespace FpsDemo.AssetBundles
                     return streamingRoot;
                 }
 
-                string downloadedRoot = Path.Combine(persistentBundleRoot, version, platformFolderName);
-                if (IsCompleteBundleRoot(downloadedRoot, platformFolderName))
+                string versionRoot = Path.Combine(persistentBundleRoot, version);
+                string downloadedRoot = Path.Combine(versionRoot, platformFolderName);
+                string validationReason;
+                if (AssetBundleVersionValidator.TryValidate(versionRoot, platformFolderName, out validationReason))
                 {
                     Debug.Log("[AssetBundles] Using downloaded version " + version + ": " + downloadedRoot);
                     return downloadedRoot;
@@ -59,7 +59,7 @@ namespace FpsDemo.AssetBundles
 
                 Debug.LogWarning(
                     "[AssetBundles] Downloaded version " + version +
-                    " is incomplete. Using StreamingAssets instead.");
+                    " is invalid (" + validationReason + "). Using StreamingAssets instead.");
             }
             catch (Exception exception)
             {
@@ -69,13 +69,6 @@ namespace FpsDemo.AssetBundles
             }
 
             return streamingRoot;
-        }
-
-        private static bool IsCompleteBundleRoot(string bundleRoot, string platformFolderName)
-        {
-            return Directory.Exists(bundleRoot) &&
-                   File.Exists(Path.Combine(bundleRoot, ManifestBundleFileName)) &&
-                   File.Exists(Path.Combine(bundleRoot, platformFolderName));
         }
 
         private static bool IsSafeFolderName(string value)
