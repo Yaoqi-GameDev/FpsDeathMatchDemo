@@ -11,4 +11,11 @@
     ResourceType="Dependency"
     BundleType="File"
     Suffix=".fbx|.mat|.png" />
+
+  <BuildItem
+    AssetPath="Assets/01_Project/AssetBundleAssets/Lua"
+    ResourceType="Direct"
+    BundleType="File"
+    Suffix=".bytes" />
+
 </BuildSetting>

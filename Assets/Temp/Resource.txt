@@ -1,4 +1,4 @@
-﻿0	Assets/01_Project/AssetBundleAssets/AB_VisibleCube.prefab
+﻿0	Assets/01_Project/AssetBundleAssets/Lua/Main.lua.bytes
 1	Assets/01_Project/AssetBundleAssets/VFX/VFX_Blood_01.prefab
 2	Assets/01_Project/AssetBundleAssets/VFX/VFX_Classic_03.prefab
 3	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/01_Material/Flare/Impact 10.mat

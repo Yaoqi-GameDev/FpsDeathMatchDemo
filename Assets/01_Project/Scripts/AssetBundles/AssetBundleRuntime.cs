@@ -19,6 +19,9 @@ namespace FpsDemo.AssetBundles
         public static AssetBundleRuntime Instance { get; private set; }
         public static bool IsInitialized { get; private set; }
 
+        /// <summary>AssetBundle 初始化完成后触发（ResourceManager 就绪，可加载资源）。</summary>
+        public static event Action Initialized;
+
         private string _bundleRoot;
 
         private void Awake()
@@ -79,6 +82,7 @@ namespace FpsDemo.AssetBundles
                 ResourceManager.instance.Initialize(PlatformFolderName, GetBundleFilePath, editor: false, offset: 0);
                 IsInitialized = true;
                 Debug.Log("[AssetBundles] Initialized from " + _bundleRoot, this);
+                Initialized?.Invoke();
             }
             catch (Exception e)
             {
