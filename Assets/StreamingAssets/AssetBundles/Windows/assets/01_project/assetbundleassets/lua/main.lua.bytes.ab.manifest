@@ -1,20 +1,20 @@
 ManifestFileVersion: 0
-CRC: 988597832
+CRC: 4165314376
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: b41a17eb1e40eea7d133cedde82c67e7
+    Hash: aa86c88446f3209bb4efef896b787386
   TypeTreeHash:
     serializedVersion: 2
-    Hash: 2612ac43db082a73502ee80f2eceb73f
+    Hash: 5ad585dd02dfb5016c0dad519eab8f49
   IncrementalBuildHash:
     serializedVersion: 2
-    Hash: b41a17eb1e40eea7d133cedde82c67e7
+    Hash: aa86c88446f3209bb4efef896b787386
 HashAppended: 0
 ClassTypes:
-- Class: 28
+- Class: 49
   Script: {instanceID: 0}
 SerializeReferenceClassIdentifiers: []
 Assets:
-- Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/03_Texture/Blood.png
+- Assets/01_Project/AssetBundleAssets/Lua/Main.lua.bytes
 Dependencies: []

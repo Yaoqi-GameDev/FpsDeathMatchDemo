@@ -27,14 +27,24 @@ public class LuaManager
 
     private byte[] LoaderFromAB(ref string filePath){
         string url=LuaRootPath+filePath+".lua.bytes";
-        IResource resource = ResourceManager.instance.Load(url, false);
-        TextAsset text=resource?.GetAsset<TextAsset>();
-        if (text == null)
+        try
+        {
+            IResource resource = ResourceManager.instance.Load(url, false);
+            TextAsset text=resource?.GetAsset<TextAsset>();
+            if (text == null)
             {
                 Debug.LogWarning("[LuaManager] 未找到 Lua 脚本: " + url);
                 return null;
             }
             return text.bytes;
+        }
+        catch (System.Exception e)
+        {
+            // 资源不在当前 AB 包中（如 StreamingAssets 兜底包未含 Lua）时：
+            // 返回 null 让 xLua 报"模块未找到"，而不是抛异常打断 AB 初始化。
+            Debug.LogWarning($"[LuaManager] 加载 Lua 脚本失败: {url} ({e.Message})");
+            return null;
+        }
         
     }
 
@@ -42,7 +52,19 @@ public class LuaManager
         => _env.DoString(chunk, chunkName);
 
     public object[] DoFile(string filePath)
-        => _env.DoString($"return require '{filePath}'", $"DoFile:{filePath}");
+    {
+        try
+        {
+            return _env.DoString($"return require '{filePath}'", $"DoFile:{filePath}");
+        }
+        catch (System.Exception e)
+        {
+            // 模块未找到/脚本错误不应阻断游戏流程（AB 初始化在更外层 try-catch 里，
+            // 这里的异常如果冒上去会把 AssetBundleRuntime enabled=false）。
+            Debug.LogWarning($"[LuaManager] DoFile '{filePath}' 失败: {e.Message}");
+            return null;
+        }
+    }
 
     public T GetGlobal<T>(string name)
         => _env.Global.Get<T>(name);
