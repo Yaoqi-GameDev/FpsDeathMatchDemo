@@ -4,6 +4,8 @@ assets/01_project/assetbundleassets/vfx/vfx_classic_03.prefab.ab
 	Assets/01_Project/AssetBundleAssets/VFX/VFX_Classic_03.prefab
 assets/01_project/assetbundleassets/lua/main.lua.bytes.ab
 	Assets/01_Project/AssetBundleAssets/Lua/Main.lua.bytes
+assets/01_project/assetbundleassets/lua/combat/damage.lua.bytes.ab
+	Assets/01_Project/AssetBundleAssets/Lua/Combat/Damage.lua.bytes
 assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/04_model/impactplane.fbx.ab
 	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/04_Model/ImpactPlane.fbx
 assets/03_external/fpsdemofromassertstore/vfxpack_impact_wallcoeur_freeversion/01_material/liquid/blood.mat.ab

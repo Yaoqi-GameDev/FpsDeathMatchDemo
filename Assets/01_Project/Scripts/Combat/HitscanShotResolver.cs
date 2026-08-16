@@ -1,5 +1,6 @@
 using System;
 using FpsDemo.Data;
+using FpsDemo.Lua;
 using UnityEngine;
 
 namespace FpsDemo.Combat
@@ -62,7 +63,7 @@ namespace FpsDemo.Combat
                     var hitbox = h.collider.GetComponent<HitboxBodyRegion>()
                         ?? h.collider.GetComponentInParent<HitboxBodyRegion>();
                     DamageBodyRegion region = hitbox != null ? hitbox.Region : DamageBodyRegion.Unknown;
-                    float mult = BodyDamageMultiplierConfig.ResolveMultiplier(region, bodyDamageConfig);
+                    float mult = LuaDamage.GetMultiplier(region);
                     float finalDamage = damagePerShot * mult;
 
                     hitDamageable = true;

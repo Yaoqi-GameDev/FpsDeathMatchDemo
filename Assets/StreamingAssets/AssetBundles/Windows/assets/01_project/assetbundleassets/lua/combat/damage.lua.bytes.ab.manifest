@@ -1,20 +1,20 @@
 ManifestFileVersion: 0
-CRC: 723190009
+CRC: 2379544680
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 79bfc6486b9cda0915a397c7365d7d60
+    Hash: 3744c54d0212f8a0bbd5ff726837981f
   TypeTreeHash:
     serializedVersion: 2
     Hash: 5ad585dd02dfb5016c0dad519eab8f49
   IncrementalBuildHash:
     serializedVersion: 2
-    Hash: 79bfc6486b9cda0915a397c7365d7d60
+    Hash: 3744c54d0212f8a0bbd5ff726837981f
 HashAppended: 0
 ClassTypes:
 - Class: 49
   Script: {instanceID: 0}
 SerializeReferenceClassIdentifiers: []
 Assets:
-- Assets/01_Project/AssetBundleAssets/Lua/Main.lua.bytes
+- Assets/01_Project/AssetBundleAssets/Lua/Combat/Damage.lua.bytes
 Dependencies: []

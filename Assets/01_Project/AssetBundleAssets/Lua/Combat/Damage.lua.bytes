@@ -1,0 +1,18 @@
+-- Damage.lua.bytes
+-- region: 0=Unknown 1=Head 2=Torso 3=Limb
+
+local M={}
+
+function M.GetDamageMultiplier(region)
+    if region == 1 then
+        return 2.0
+    elseif region ==2 then
+        return 1
+    elseif region ==3 then
+        return 0.7
+    else 
+        return 1.0
+    end
+end
+
+return M

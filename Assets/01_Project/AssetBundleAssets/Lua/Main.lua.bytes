@@ -1,1 +1,5 @@
-print("hello from lua in AB")
+-- Main.lua.bytes
+local Damage = require("Combat/Damage")
+
+-- 注册为 Lua 全局函数，C# 的 GetGlobal 才能拿到
+GetDamageMultiplier = Damage.GetDamageMultiplier

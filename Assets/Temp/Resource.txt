@@ -1,11 +1,12 @@
-﻿0	Assets/01_Project/AssetBundleAssets/Lua/Main.lua.bytes
-1	Assets/01_Project/AssetBundleAssets/VFX/VFX_Blood_01.prefab
-2	Assets/01_Project/AssetBundleAssets/VFX/VFX_Classic_03.prefab
-3	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/01_Material/Flare/Impact 10.mat
-4	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/01_Material/Flare/Impact 7.mat
-5	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/01_Material/Flare/ImpactALPHA.mat
-6	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/01_Material/Liquid/BLOOD.mat
-7	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/03_Texture/Blood.png
-8	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/03_Texture/Zbam2.png
-9	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/03_Texture/Zbam3.png
-10	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/04_Model/ImpactPlane.fbx
+﻿0	Assets/01_Project/AssetBundleAssets/Lua/Combat/Damage.lua.bytes
+1	Assets/01_Project/AssetBundleAssets/Lua/Main.lua.bytes
+2	Assets/01_Project/AssetBundleAssets/VFX/VFX_Blood_01.prefab
+3	Assets/01_Project/AssetBundleAssets/VFX/VFX_Classic_03.prefab
+4	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/01_Material/Flare/Impact 10.mat
+5	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/01_Material/Flare/Impact 7.mat
+6	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/01_Material/Flare/ImpactALPHA.mat
+7	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/01_Material/Liquid/BLOOD.mat
+8	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/03_Texture/Blood.png
+9	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/03_Texture/Zbam2.png
+10	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/03_Texture/Zbam3.png
+11	Assets/03_External/FpsDemoFromAssertStore/VFXPACK_IMPACT_WALLCOEUR_FreeVersion/04_Model/ImpactPlane.fbx
